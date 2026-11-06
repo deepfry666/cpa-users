@@ -1,0 +1,34 @@
+# Test-only CPA config for test/e2e.py. All keys here are throwaway values for a local mock upstream.
+host: "127.0.0.1"
+port: 18417
+remote-management:
+  allow-remote: false
+  secret-key: "$2a$10$2RZR9qjhm0Tv24aUtfG/Q.JfLtPpbphZn9KG5GACRjHshQA8Fi0vW"
+  disable-control-panel: false
+auth-dir: "./auths"
+debug: false
+logging-to-file: false
+usage-statistics-enabled: false
+request-retry: 0
+api-keys:
+  - "sk-admin-native-test"
+openai-compatibility:
+  - name: mock
+    base-url: http://127.0.0.1:18400/v1
+    api-key-entries:
+      - api-key: mock-upstream-key
+    models:
+      - name: gpt-5.6-sol
+        alias: ""
+      - name: deepseek-v4-flash
+        alias: ""
+      - name: claude-opus-x
+        alias: ""
+plugins:
+  enabled: true
+  dir: "plugins"
+  configs:
+    cpa-users:
+      enabled: true
+      priority: 10
+      timezone: "Asia/Shanghai"

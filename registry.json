@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "plugins": [
+    {
+      "id": "cpa-users",
+      "name": "用户分发",
+      "description": "按用户发放 Key，管理每个人能看到和调用的模型、每日/每月 Token 与请求额度、并发和到期时间，并统计用量；管理页嵌在 CPAMC 与 Oh My CPA 中，另附用户自助查询页。",
+      "author": "deepfry666",
+      "version": "0.1.0",
+      "repository": "https://github.com/deepfry666/cpa-users",
+      "homepage": "https://github.com/deepfry666/cpa-users",
+      "license": "MIT",
+      "logo": "https://raw.githubusercontent.com/deepfry666/cpa-users/main/assets/logo.svg",
+      "tags": ["Management", "Auth", "Quota", "Usage", "OMC"]
+    }
+  ]
+}

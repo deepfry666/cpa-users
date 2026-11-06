@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>我的用量</title>
+<style>
+:root {
+  color-scheme: light;
+  --bg-secondary: #faf9f5; --bg-primary: #f0eee8; --bg-tertiary: #e9e6df;
+  --text-primary: #2d2a26; --text-secondary: #6d6760; --text-tertiary: #a29c95;
+  --border-color: #e3e1db; --border-primary: #d5d2cb;
+  --success-color: #10b981; --error-color: #c65746; --warning-bg: rgba(198, 87, 70, 0.12);
+  --series-1: #2a78d6;
+}
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    color-scheme: dark;
+    --bg-secondary: #151412; --bg-primary: #1d1b18; --bg-tertiary: #272420;
+    --text-primary: #f6f4f1; --text-secondary: #c9c3bb; --text-tertiary: #8f887f;
+    --border-color: #2f2b27; --border-primary: #3a3530;
+    --series-1: #3987e5;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg-secondary: #151412; --bg-primary: #1d1b18; --bg-tertiary: #272420;
+  --text-primary: #f6f4f1; --text-secondary: #c9c3bb; --text-tertiary: #8f887f;
+  --border-color: #2f2b27; --border-primary: #3a3530;
+  --series-1: #3987e5;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg-secondary); color: var(--text-primary); font: 14px/1.55 -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif; -webkit-font-smoothing: antialiased; }
+button, input { font: inherit; color: inherit; }
+.wrap { max-width: 920px; margin: 0 auto; padding: 28px 16px 56px; }
+h1 { font-size: 22px; margin: 0; font-weight: 650; }
+.muted { color: var(--text-secondary); }
+.faint { color: var(--text-tertiary); }
+.card { background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 12px; padding: 16px; margin-top: 14px; }
+.card h2 { font-size: 15px; margin: 0 0 12px; font-weight: 600; }
+.row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.input { padding: 8px 11px; border: 1px solid var(--border-primary); border-radius: 8px; background: var(--bg-secondary); min-width: 0; }
+.btn { border: 1px solid var(--border-primary); background: var(--bg-primary); border-radius: 8px; padding: 7px 14px; cursor: pointer; }
+.btn.primary { background: var(--text-primary); color: var(--bg-secondary); border-color: var(--text-primary); }
+.quota { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+.q { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 10px; padding: 12px 14px; }
+.q .label { color: var(--text-secondary); font-size: 13px; }
+.q .value { font-size: 22px; font-weight: 650; font-variant-numeric: tabular-nums; margin: 2px 0 6px; }
+.bar { height: 6px; border-radius: 3px; background: var(--bg-tertiary); overflow: hidden; }
+.bar > span { display: block; height: 100%; background: var(--text-secondary); }
+.bar > span.hot { background: var(--error-color); }
+.q small { color: var(--text-tertiary); font-size: 12px; }
+.chip { display: inline-block; padding: 1px 8px; border-radius: 999px; background: var(--bg-tertiary); font-size: 12.5px; margin: 2px 4px 2px 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--border-color); }
+th { color: var(--text-secondary); font-weight: 500; font-size: 13px; }
+td.num, th.num { text-align: right; }
+tr:last-child td { border-bottom: 0; }
+.scroll { overflow-x: auto; }
+.mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; }
+.notice { padding: 10px 12px; border-radius: 8px; background: var(--warning-bg); margin-top: 12px; }
+.chart { position: relative; }
+.chart svg { display: block; width: 100%; height: 180px; }
+.chart .grid { stroke: var(--border-color); }
+.chart .axis { fill: var(--text-tertiary); font-size: 11px; }
+.tip { position: fixed; pointer-events: none; background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 8px; padding: 7px 10px; font-size: 12px; display: none; z-index: 5; box-shadow: 0 10px 18px -3px rgb(0 0 0 / .12); }
+.status { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; }
+.status::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--success-color); }
+.status.bad::before { background: var(--error-color); }
+code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; background: var(--bg-tertiary); padding: 1px 5px; border-radius: 5px; word-break: break-all; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="row"><h1>我的用量</h1><span style="flex:1"></span><span id="who" class="muted"></span></div>
+  <form id="form" class="card row" autocomplete="off">
+    <input class="input" id="key" type="password" placeholder="粘贴你的 API Key（sk-cu-…）" style="flex:1" required>
+    <button class="btn primary">查询</button>
+    <button class="btn" type="button" id="forget">清除</button>
+  </form>
+  <div id="out"></div>
+</div>
+<div class="tip" id="tip"></div>
+<script>
+(() => {
+"use strict";
+const STORE = "cpa-users:me-key";
+const fmt = new Intl.NumberFormat("zh-CN", { notation: "compact", maximumFractionDigits: 1 });
+const fmtInt = new Intl.NumberFormat("zh-CN");
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const $ = (s) => document.querySelector(s);
+const getKey = () => { try { return localStorage.getItem(STORE) || ""; } catch { return ""; } };
+const setKey = (v) => { try { v ? localStorage.setItem(STORE, v) : localStorage.removeItem(STORE); } catch { /* ignore */ } };
+
+async function load(key) {
+  const out = $("#out");
+  out.innerHTML = `<div class="card muted">查询中…</div>`;
+  let res, data = {};
+  try {
+    res = await fetch("me/data", { headers: { Authorization: `Bearer ${key}` }, cache: "no-store" });
+    data = await res.json();
+  } catch { out.innerHTML = `<div class="notice">网络错误，请稍后再试。</div>`; return; }
+  if (!res.ok) { out.innerHTML = `<div class="notice">${esc(data.error || "查询失败")}</div>`; $("#who").textContent = ""; return; }
+  setKey(key);
+  render(data);
+}
+
+function meterCard(label, used, limit, unit, reset) {
+  const pct = limit ? Math.min(100, (used / limit) * 100) : 0;
+  return `<div class="q"><div class="label">${label}</div>
+    <div class="value">${fmt.format(used)}<span class="faint" style="font-size:14px;font-weight:400"> / ${limit ? fmt.format(limit) : "不限"}${unit}</span></div>
+    ${limit ? `<div class="bar"><span class="${pct >= 90 ? "hot" : ""}" style="width:${pct.toFixed(1)}%"></span></div>` : ""}
+    <small>${reset ? "重置于 " + new Date(reset * 1000).toLocaleString("zh-CN", { hour12: false }) : ""}</small></div>`;
+}
+
+function render(d) {
+  const u = d.user, q = d.quota;
+  $("#who").innerHTML = `${esc(u.name)} · ${esc(d.key.name || d.key.hint)}`;
+  const blocked = u.blocked || (d.key.disabled ? "该 Key 已停用" : "");
+  const base = location.origin;
+  $("#out").innerHTML = `
+    ${blocked ? `<div class="notice">${esc(blocked)}</div>` : ""}
+    <section class="card"><h2>额度 <span class="status ${blocked ? "bad" : ""}" style="font-weight:400;margin-left:8px">${blocked ? "不可用" : "正常"}</span>
+      ${u.expires_at ? `<span class="faint" style="font-weight:400;font-size:13px;margin-left:8px">有效期至 ${new Date(u.expires_at * 1000 - 1).toLocaleDateString("zh-CN")}</span>` : ""}</h2>
+      <div class="quota">
+        ${meterCard("今日 Token", q.day.tokens, u.daily_tokens, "", u.daily_tokens ? q.day_reset : 0)}
+        ${meterCard("今日请求", q.day.requests, u.daily_requests, " 次", u.daily_requests ? q.day_reset : 0)}
+        ${meterCard("本月 Token", q.month.tokens, u.monthly_tokens, "", u.monthly_tokens ? q.month_reset : 0)}
+        ${meterCard("本月请求", q.month.requests, u.monthly_requests, " 次", u.monthly_requests ? q.month_reset : 0)}
+      </div>
+      ${u.max_concurrency ? `<p class="faint" style="margin:10px 0 0;font-size:13px">最多同时 ${u.max_concurrency} 个请求，当前 ${q.running} 个。</p>` : ""}
+    </section>
+    <section class="card"><h2>可用模型</h2>
+      ${d.available && d.available.length ? d.available.map((m) => `<span class="chip">${esc(m)}</span>`).join("") : `<span class="faint">暂无已知模型</span>`}
+      ${d.patterns.some((p) => p.includes("*")) ? `<p class="faint" style="font-size:13px;margin:8px 0 0">规则：${d.patterns.map((p) => `<span class="chip">${esc(p)}</span>`).join("")}</p>` : ""}
+    </section>
+    <section class="card"><h2>最近 14 天 Token</h2><div class="chart" id="chart"></div></section>
+    <section class="card"><h2>按模型（14 天）</h2><div class="scroll">${modelTable(d.usage)}</div></section>
+    <section class="card"><h2>最近请求</h2><div class="scroll">${logTable(d.logs)}</div></section>
+    <section class="card"><h2>接入方式</h2>
+      <div class="muted" style="font-size:13px;display:grid;gap:6px">
+        <div>OpenAI 兼容客户端：Base URL <code>${esc(base)}/v1</code>，API Key 填你的 Key。</div>
+        <div>Claude Code：<code>ANTHROPIC_BASE_URL=${esc(base)}</code>，<code>ANTHROPIC_AUTH_TOKEN</code> 填你的 Key。</div>
+        <div>超出额度会返回 429，调用无权限的模型会返回 403。</div>
+      </div></section>`;
+  drawChart(d.usage);
+}
+
+function modelTable(usage) {
+  const rows = Object.entries(usage.by_model || {}).sort((a, b) => b[1].total_tokens - a[1].total_tokens);
+  if (!rows.length) return `<div class="faint">还没有用量。</div>`;
+  return `<table><thead><tr><th>模型</th><th class="num">请求</th><th class="num">输入</th><th class="num">输出</th><th class="num">合计</th></tr></thead><tbody>
+    ${rows.map(([m, r]) => `<tr><td class="mono">${esc(m)}</td><td class="num">${fmtInt.format(r.requests)}</td><td class="num">${fmt.format(r.input_tokens)}</td><td class="num">${fmt.format(r.output_tokens)}</td><td class="num">${fmt.format(r.total_tokens)}</td></tr>`).join("")}
+  </tbody></table>`;
+}
+
+function logTable(logs) {
+  if (!logs || !logs.length) return `<div class="faint">还没有请求。</div>`;
+  return `<table><thead><tr><th>时间</th><th>模型</th><th>状态</th><th class="num">输入</th><th class="num">输出</th><th class="num">耗时</th></tr></thead><tbody>
+    ${logs.map((l) => `<tr><td style="white-space:nowrap">${new Date(l.ts * 1000).toLocaleString("zh-CN", { hour12: false })}</td><td class="mono">${esc(l.model)}</td>
+      <td>${l.failed ? `<span class="status bad">${l.status || "失败"}</span>` : `<span class="status">${l.status}</span>`}</td>
+      <td class="num">${fmtInt.format(l.input_tokens)}</td><td class="num">${fmtInt.format(l.output_tokens)}</td><td class="num">${(l.latency_ms / 1000).toFixed(1)}s</td></tr>`).join("")}
+  </tbody></table>`;
+}
+
+// One series, so no legend; the title names it. Hover shows the day's numbers.
+function drawChart(usage) {
+  const host = $("#chart");
+  const vals = usage.daily.map((x) => x.total_tokens);
+  const max = Math.max(...vals, 0);
+  if (!max) { host.innerHTML = `<div class="faint">还没有用量。</div>`; return; }
+  const W = Math.max(host.clientWidth, 300), H = 180, padL = 40, padR = 6, padT = 6, padB = 22;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+  const raw = max / 3, p = Math.pow(10, Math.floor(Math.log10(raw))), f = raw / p;
+  const step = (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * p;
+  const top = Math.ceil(max / step) * step;
+  const n = vals.length, slot = plotW / n, bw = Math.max(4, Math.min(28, slot * 0.6));
+  const y = (v) => padT + plotH - (v / top) * plotH;
+  let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="最近 14 天 Token">`;
+  for (let v = 0; v <= top + 1e-9; v += step) svg += `<line class="grid" x1="${padL}" x2="${W - padR}" y1="${y(v)}" y2="${y(v)}"/><text class="axis" x="${padL - 6}" y="${y(v) + 4}" text-anchor="end">${fmt.format(v)}</text>`;
+  const every = Math.ceil(n / Math.max(1, Math.floor(plotW / 50)));
+  vals.forEach((v, i) => {
+    const cx = padL + slot * i + slot / 2;
+    if (i % every === 0 || i === n - 1) svg += `<text class="axis" x="${cx}" y="${H - 5}" text-anchor="middle">${usage.days[i].slice(5)}</text>`;
+    if (v > 0) {
+      const x = cx - bw / 2, yt = y(v), h = Math.max(1, padT + plotH - yt), r = Math.min(4, bw / 2, h);
+      svg += `<path fill="var(--series-1)" d="M${x},${yt + h}V${yt + r}Q${x},${yt} ${x + r},${yt}H${x + bw - r}Q${x + bw},${yt} ${x + bw},${yt + r}V${yt + h}Z"/>`;
+    }
+    svg += `<rect x="${padL + slot * i}" y="${padT}" width="${slot}" height="${plotH}" fill="transparent" data-i="${i}"/>`;
+  });
+  host.innerHTML = svg + `</svg>`;
+  const tip = $("#tip");
+  host.onmousemove = (e) => {
+    const t = e.target.closest("[data-i]");
+    if (!t) { tip.style.display = "none"; return; }
+    const i = Number(t.dataset.i), day = usage.daily[i];
+    tip.innerHTML = `<div class="muted">${esc(usage.days[i])}</div><div><b>${fmtInt.format(day.total_tokens)}</b> Token · ${fmtInt.format(day.requests)} 次请求</div>`;
+    tip.style.display = "block";
+    const r = tip.getBoundingClientRect();
+    tip.style.left = `${Math.min(e.clientX + 12, innerWidth - r.width - 8)}px`;
+    tip.style.top = `${e.clientY + 14}px`;
+  };
+  host.onmouseleave = () => { tip.style.display = "none"; };
+}
+
+$("#form").addEventListener("submit", (e) => { e.preventDefault(); const k = $("#key").value.trim(); if (k) load(k); });
+$("#forget").addEventListener("click", () => { setKey(""); $("#key").value = ""; $("#out").innerHTML = ""; $("#who").textContent = ""; });
+const saved = getKey();
+if (saved) { $("#key").value = saved; load(saved); }
+})();
+</script>
+</body>
+</html>

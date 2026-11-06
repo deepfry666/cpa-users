@@ -1,0 +1,824 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>用户分发</title>
+<style>
+:root {
+  color-scheme: light;
+  /* Fallbacks match CPAMC's default theme; embedded pages copy the live values from the parent. */
+  --bg-secondary: #faf9f5; --bg-primary: #f0eee8; --bg-tertiary: #e9e6df; --bg-quinary: #f6f4ee;
+  --text-primary: #2d2a26; --text-secondary: #6d6760; --text-tertiary: #a29c95;
+  --border-color: #e3e1db; --border-primary: #d5d2cb;
+  --primary-color: #8b8680; --primary-hover: #7f7a74; --primary-contrast: #ffffff;
+  --success-color: #10b981; --error-color: #c65746; --warning-bg: rgba(198, 87, 70, 0.12);
+  --shadow: 0 1px 2px 0 rgb(0 0 0 / 0.08); --shadow-lg: 0 10px 18px -3px rgb(0 0 0 / 0.1);
+  --radius-md: 8px;
+  --series-1: #2a78d6; --series-2: #eb6834; --series-3: #1baf7a; --series-4: #eda100;
+  --series-5: #e87ba4; --series-6: #008300; --series-7: #6250d6; --series-other: #a29c95;
+}
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"]):not([data-theme="white"]):not([data-host="cpamc"]):not([data-host="frame"])) {
+    color-scheme: dark;
+    --bg-secondary: #151412; --bg-primary: #1d1b18; --bg-tertiary: #272420; --bg-quinary: #1a1816;
+    --text-primary: #f6f4f1; --text-secondary: #c9c3bb; --text-tertiary: #8f887f;
+    --border-color: #2f2b27; --border-primary: #3a3530;
+    --primary-color: #a39d96; --primary-hover: #b3ada6; --primary-contrast: #151412;
+    --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500;
+    --series-5: #d55181; --series-6: #008300; --series-7: #9085e9; --series-other: #6f6962;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg-secondary: #151412; --bg-primary: #1d1b18; --bg-tertiary: #272420; --bg-quinary: #1a1816;
+  --text-primary: #f6f4f1; --text-secondary: #c9c3bb; --text-tertiary: #8f887f;
+  --border-color: #2f2b27; --border-primary: #3a3530;
+  --primary-color: #a39d96; --primary-hover: #b3ada6; --primary-contrast: #151412;
+  --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500;
+  --series-5: #d55181; --series-6: #008300; --series-7: #9085e9; --series-other: #6f6962;
+}
+/* Oh My CPA frames plugin pages with only a light/dark flag, so the page carries OMC's palette. */
+:root[data-host="frame"] {
+  --bg-secondary: #ffffff; --bg-primary: #f1f1f3; --bg-tertiary: #e5e5ea; --bg-quinary: #f7f7f8;
+  --text-primary: #1c1c1e; --text-secondary: #5c5c64; --text-tertiary: #787880;
+  --border-color: #dcdce1; --border-primary: #cbcbd2; --radius-md: 6px;
+}
+:root[data-host="frame"][data-theme="dark"] {
+  --bg-secondary: #121214; --bg-primary: #1c1c1f; --bg-tertiary: #26262b; --bg-quinary: #18181b;
+  --text-primary: #f4f4f6; --text-secondary: #a1a1aa; --text-tertiary: #7c7c86;
+  --border-color: #2c2c30; --border-primary: #3a3a41;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg-secondary); color: var(--text-primary);
+  font: 14px/1.5 -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+button, input, select, textarea { font: inherit; color: inherit; }
+.wrap { max-width: 1240px; margin: 0 auto; padding: 20px 20px 48px; }
+header.top { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+header.top h1 { font-size: 20px; margin: 0; font-weight: 650; letter-spacing: .2px; }
+/* CPAMC floats its own toolbar over the top-right corner of plugin pages. */
+:root[data-host="cpamc"] header.top { padding-right: 170px; min-height: 44px; }
+@media (max-width: 640px) { :root[data-host="cpamc"] header.top { padding-right: 0; padding-top: 44px; } }
+td.nowrap, th.nowrap { white-space: nowrap; }
+.muted { color: var(--text-secondary); }
+.faint { color: var(--text-tertiary); }
+.spacer { flex: 1; }
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border-color); margin-bottom: 18px; overflow-x: auto; }
+.tab { border: 0; background: none; padding: 9px 14px; cursor: pointer; color: var(--text-secondary); border-bottom: 2px solid transparent; margin-bottom: -1px; white-space: nowrap; }
+.tab[aria-selected="true"] { color: var(--text-primary); border-bottom-color: var(--text-primary); font-weight: 600; }
+.btn { border: 1px solid var(--border-primary); background: var(--bg-primary); border-radius: var(--radius-md); padding: 6px 12px; cursor: pointer; white-space: nowrap; }
+.btn:hover { background: var(--bg-tertiary); }
+.btn.primary { background: var(--text-primary); color: var(--bg-secondary); border-color: var(--text-primary); }
+.btn.primary:hover { opacity: .9; }
+.btn.danger { color: var(--error-color); }
+.btn.small { padding: 3px 9px; font-size: 13px; }
+.btn:disabled { opacity: .5; cursor: default; }
+.card { background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 12px; padding: 16px; }
+.card + .card { margin-top: 14px; }
+.card h2 { font-size: 15px; margin: 0 0 12px; font-weight: 600; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 14px; }
+.kpi { background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 12px; padding: 14px 16px; }
+.kpi .label { color: var(--text-secondary); font-size: 13px; }
+.kpi .value { font-size: 26px; font-weight: 650; margin-top: 4px; font-variant-numeric: tabular-nums; }
+.kpi .sub { color: var(--text-tertiary); font-size: 12px; margin-top: 2px; }
+table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
+th { color: var(--text-secondary); font-weight: 500; font-size: 13px; white-space: nowrap; }
+td.num, th.num { text-align: right; }
+tr:last-child td { border-bottom: 0; }
+.table-scroll { overflow-x: auto; }
+.chip { display: inline-block; padding: 1px 8px; border-radius: 999px; background: var(--bg-tertiary); font-size: 12px; margin: 2px 4px 2px 0; white-space: nowrap; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.status { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; white-space: nowrap; }
+.status::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--success-color); }
+.status.off::before { background: var(--text-tertiary); }
+.status.bad::before { background: var(--error-color); }
+.meter { display: grid; gap: 3px; min-width: 120px; }
+.meter .bar { height: 5px; border-radius: 3px; background: var(--bg-tertiary); overflow: hidden; }
+.meter .bar > span { display: block; height: 100%; background: var(--text-secondary); border-radius: 3px; }
+.meter .bar > span.hot { background: var(--error-color); }
+.meter small { color: var(--text-secondary); font-size: 12px; white-space: nowrap; }
+.row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.seg { display: inline-flex; border: 1px solid var(--border-primary); border-radius: var(--radius-md); overflow: hidden; }
+.seg button { border: 0; background: var(--bg-primary); padding: 4px 10px; cursor: pointer; color: var(--text-secondary); }
+.seg button[aria-pressed="true"] { background: var(--bg-tertiary); color: var(--text-primary); font-weight: 600; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; color: var(--text-secondary); margin-bottom: 8px; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+.chart { position: relative; }
+.chart svg { display: block; width: 100%; height: 240px; overflow: visible; }
+.chart .grid { stroke: var(--border-color); stroke-width: 1; }
+.chart .axis { fill: var(--text-tertiary); font-size: 11px; }
+.tip { position: absolute; pointer-events: none; background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 8px; padding: 8px 10px; font-size: 12px; box-shadow: var(--shadow-lg); white-space: nowrap; z-index: 5; display: none; }
+.tip b { font-weight: 600; }
+.empty { padding: 28px 12px; text-align: center; color: var(--text-secondary); }
+.notice { padding: 10px 12px; border-radius: 8px; background: var(--warning-bg); color: var(--text-primary); margin-bottom: 14px; }
+.hint { font-size: 12px; color: var(--text-tertiary); }
+code, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; }
+.grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 16px; }
+@media (max-width: 720px) { .grid2 { grid-template-columns: 1fr; } }
+label.field { display: grid; gap: 4px; font-size: 13px; color: var(--text-secondary); }
+label.field input, label.field select, label.field textarea, .input { padding: 7px 10px; border: 1px solid var(--border-primary); border-radius: var(--radius-md); background: var(--bg-secondary); color: var(--text-primary); min-width: 0; }
+label.check { display: inline-flex; gap: 6px; align-items: center; font-size: 13px; cursor: pointer; }
+dialog { border: 1px solid var(--border-primary); border-radius: 14px; padding: 0; background: var(--bg-secondary); color: var(--text-primary); width: min(720px, calc(100vw - 32px)); max-height: calc(100vh - 48px); box-shadow: var(--shadow-lg); }
+dialog::backdrop { background: rgb(0 0 0 / .35); }
+.dlg-head { display: flex; align-items: center; padding: 14px 18px; border-bottom: 1px solid var(--border-color); }
+.dlg-head h3 { margin: 0; font-size: 16px; }
+.dlg-body { padding: 16px 18px; overflow: auto; max-height: calc(100vh - 190px); }
+.dlg-foot { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 18px; border-top: 1px solid var(--border-color); }
+.picker { border: 1px solid var(--border-primary); border-radius: 10px; overflow: hidden; }
+.picker .picker-top { display: flex; gap: 8px; padding: 8px; border-bottom: 1px solid var(--border-color); background: var(--bg-primary); flex-wrap: wrap; }
+.picker .picker-top input { flex: 1; min-width: 140px; }
+.picker .list { max-height: 220px; overflow: auto; padding: 6px 8px; display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 2px 10px; }
+.picker .list label { display: flex; align-items: center; gap: 6px; font-size: 13px; padding: 3px 2px; cursor: pointer; overflow: hidden; }
+.picker .list label span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; }
+.picker .selected { padding: 8px; border-top: 1px solid var(--border-color); min-height: 38px; }
+.chip button { border: 0; background: none; padding: 0 0 0 4px; cursor: pointer; color: var(--text-tertiary); }
+.keybox { padding: 12px; border-radius: 10px; border: 1px dashed var(--border-primary); background: var(--bg-primary); margin: 10px 0; }
+.keybox .mono { word-break: break-all; font-size: 13.5px; }
+.login { max-width: 420px; margin: 12vh auto; }
+.toast { position: fixed; right: 18px; bottom: 18px; background: var(--text-primary); color: var(--bg-secondary); padding: 9px 14px; border-radius: 10px; box-shadow: var(--shadow-lg); z-index: 50; display: none; max-width: 70vw; }
+.toast.err { background: var(--error-color); color: #fff; }
+.name-cell { display: grid; }
+.name-cell small { color: var(--text-tertiary); }
+.swatch { display: inline-block; width: 9px; height: 9px; border-radius: 3px; margin-right: 6px; }
+@media (max-width: 640px) { .wrap { padding: 14px 16px 40px; } .kpi .value { font-size: 22px; } }
+</style>
+</head>
+<body>
+<div class="wrap" id="app">
+  <div class="empty">加载中…</div>
+</div>
+<div class="tip" id="tip"></div>
+<div class="toast" id="toast"></div>
+<dialog id="dlg"><div class="dlg-head"><h3 id="dlg-title"></h3></div><div class="dlg-body" id="dlg-body"></div><div class="dlg-foot" id="dlg-foot"></div></dialog>
+
+<script>
+(() => {
+"use strict";
+const PLUGIN = "cpa-users";
+const MGMT = `/v0/management/${PLUGIN}/`;
+// Built from pieces: Oh My CPA re-bases literal CPA paths onto its own host, but
+// this link must point at CPA's public address, where users actually are.
+const ME_PATH = ["", "v0", "resource", "plugins", PLUGIN, "me"].join("/");
+const SESSION_KEY = `${PLUGIN}:mgmt-key`;
+// CPA's public address: the configured one, else this page's origin when CPA serves it directly.
+const cpaBase = () => (state.config && state.config.public_base_url) || (document.documentElement.dataset.host === "frame" ? "" : location.origin);
+const meURL = () => (cpaBase() ? cpaBase() + ME_PATH : "");
+const fmt = new Intl.NumberFormat("zh-CN", { notation: "compact", maximumFractionDigits: 1 });
+const fmtInt = new Intl.NumberFormat("zh-CN");
+const $ = (sel, root = document) => root.querySelector(sel);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const num = (n) => fmt.format(n || 0);
+
+// ---------- theme: follow the CPAMC parent when embedded ----------
+const THEME_VARS = ["--bg-primary", "--bg-secondary", "--bg-tertiary", "--bg-quinary", "--text-primary", "--text-secondary",
+  "--text-tertiary", "--border-color", "--border-primary", "--primary-color", "--primary-hover", "--primary-contrast",
+  "--success-color", "--error-color", "--warning-bg", "--shadow", "--shadow-lg", "--radius-md"];
+function parentDoc() {
+  try { if (window.parent !== window && window.parent.document) return window.parent.document; } catch { /* cross-origin */ }
+  return null;
+}
+function syncTheme() {
+  const pdoc = parentDoc();
+  const root = document.documentElement;
+  if (!pdoc) { root.dataset.host = "standalone"; return; }
+  const cs = getComputedStyle(pdoc.documentElement);
+  // CPAMC defines its design tokens on its root; OMC's frame shell only sets data-theme.
+  const isCpamc = cs.getPropertyValue("--bg-primary").trim() !== "";
+  root.dataset.host = isCpamc ? "cpamc" : "frame";
+  for (const v of THEME_VARS) {
+    const val = isCpamc ? cs.getPropertyValue(v).trim() : "";
+    if (val) root.style.setProperty(v, val); else root.style.removeProperty(v);
+  }
+  const theme = pdoc.documentElement.getAttribute("data-theme");
+  if (theme) root.setAttribute("data-theme", theme); else root.setAttribute("data-theme", "light");
+  if (pdoc.documentElement.lang) root.lang = pdoc.documentElement.lang;
+  if (state.loaded && view.tab === "overview") renderChart();
+}
+const pdocInit = parentDoc();
+if (pdocInit) {
+  new MutationObserver(syncTheme).observe(pdocInit.documentElement, { attributes: true, attributeFilter: ["data-theme", "class", "style", "lang"] });
+}
+
+// ---------- management key: reuse CPAMC's remembered login ----------
+function readCpamcKey() {
+  try {
+    const raw = localStorage.getItem("cli-proxy-auth");
+    if (!raw || !raw.startsWith("enc::v2::")) return "";
+    const salt = new TextEncoder().encode(`cli-proxy-api-webui::secure-storage|${location.host}`);
+    const bin = atob(raw.slice("enc::v2::".length));
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i) ^ salt[i % salt.length];
+    const data = JSON.parse(new TextDecoder().decode(bytes));
+    return (data && data.state && data.state.managementKey) || "";
+  } catch { return ""; }
+}
+function readSessionKey() { try { return sessionStorage.getItem(SESSION_KEY) || ""; } catch { return ""; } }
+function writeSessionKey(v) { try { v ? sessionStorage.setItem(SESSION_KEY, v) : sessionStorage.removeItem(SESSION_KEY); } catch { /* ignore */ } }
+let mgmtKey = readSessionKey() || readCpamcKey();
+
+// ---------- api ----------
+class AuthError extends Error {}
+async function api(path, { method = "GET", body, query } = {}) {
+  const url = new URL(MGMT + path, location.origin);
+  if (query) for (const [k, v] of Object.entries(query)) if (v !== undefined && v !== "" && v !== null) url.searchParams.set(k, v);
+  const res = await fetch(url, {
+    method,
+    // No key means no header at all: Oh My CPA then supplies its stored management key,
+    // while an explicit (even empty) credential would be checked and refused.
+    headers: { ...(mgmtKey ? { Authorization: `Bearer ${mgmtKey}` } : {}), ...(body ? { "Content-Type": "application/json" } : {}) },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  let data = {};
+  try { data = await res.json(); } catch { /* non-json */ }
+  if (res.status === 401) throw new AuthError(data.error || "管理密钥无效");
+  if (res.status === 403 && !data.error) throw new AuthError("远程管理未开启（remote-management.allow-remote）或密钥无权限");
+  if (!res.ok) throw new Error(data.error || data.message || `请求失败（${res.status}）`);
+  return data;
+}
+
+// ---------- state ----------
+const state = { loaded: false, groups: [], users: [], keys: [], models: [], config: {}, usage: null, logs: [], error: "" };
+const view = { tab: "overview", days: 7, metric: "tokens", logUser: "", logFailed: false };
+const userColor = new Map(); // user id -> css var, by creation order
+
+function toast(msg, isErr) {
+  const t = $("#toast");
+  t.textContent = msg;
+  t.className = "toast" + (isErr ? " err" : "");
+  t.style.display = "block";
+  clearTimeout(toast.timer);
+  toast.timer = setTimeout(() => { t.style.display = "none"; }, isErr ? 5000 : 2400);
+}
+
+async function loadState() {
+  const s = await api("state");
+  Object.assign(state, { groups: s.groups || [], users: s.users || [], keys: s.keys || [], models: s.models || [],
+    config: s.config || {}, ready: s.ready, error: s.error || "", timezone: s.timezone, version: s.version, loaded: true });
+  userColor.clear();
+  state.users.forEach((u, i) => userColor.set(u.id, i < 7 ? `var(--series-${i + 1})` : "var(--series-other)"));
+}
+async function loadUsage() { state.usage = await api("usage", { query: { days: view.days } }); }
+async function loadLogs() { state.logs = (await api("logs", { query: { limit: 300, user_id: view.logUser, failed: view.logFailed ? "1" : "" } })).logs || []; }
+
+async function refresh() {
+  try {
+    await loadState();
+    if (view.tab === "overview") await loadUsage();
+    if (view.tab === "logs") await loadLogs();
+    render();
+  } catch (e) { handleError(e); }
+}
+
+function handleError(e) {
+  if (e instanceof AuthError) { writeSessionKey(""); mgmtKey = ""; renderLogin(e.message); return; }
+  toast(e.message || String(e), true);
+}
+
+// ---------- helpers ----------
+const userById = (id) => state.users.find((u) => u.id === id);
+const groupById = (id) => state.groups.find((g) => g.id === id);
+const keyById = (id) => state.keys.find((k) => k.id === id);
+const userLabel = (id) => id === 0 ? "原生 Key / 其他" : (userById(id)?.name ?? `已删除用户 #${id}`);
+function when(ts) {
+  if (!ts) return "—";
+  const d = new Date(ts * 1000);
+  const diff = (Date.now() - d.getTime()) / 1000;
+  if (diff < 60) return "刚刚";
+  if (diff < 3600) return `${Math.floor(diff / 60)} 分钟前`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)} 小时前`;
+  return d.toLocaleDateString("zh-CN");
+}
+function userStatus(u) {
+  if (u.disabled) return `<span class="status off">已停用</span>`;
+  if (u.expires_at && u.expires_at * 1000 <= Date.now()) return `<span class="status bad">已过期</span>`;
+  return `<span class="status">正常</span>`;
+}
+function meter(used, limit, unit) {
+  if (!limit) return `<div class="meter"><small>${num(used)}${unit} · 不限</small></div>`;
+  const pct = Math.min(100, (used / limit) * 100);
+  return `<div class="meter"><small>${num(used)} / ${num(limit)}${unit}</small><div class="bar"><span class="${pct >= 90 ? "hot" : ""}" style="width:${pct.toFixed(1)}%"></span></div></div>`;
+}
+function modelChips(list, max = 4) {
+  if (!list || !list.length) return `<span class="faint">无</span>`;
+  const shown = list.slice(0, max).map((m) => `<span class="chip">${esc(m)}</span>`).join("");
+  return shown + (list.length > max ? `<span class="faint">+${list.length - max}</span>` : "");
+}
+
+// ---------- layout ----------
+function render() {
+  const app = $("#app");
+  const tabs = [["overview", "概览"], ["users", "用户"], ["groups", "模型分组"], ["logs", "请求记录"]];
+  app.innerHTML = `
+    <header class="top">
+      <h1>用户分发</h1><span class="faint">v${esc(state.version || "")}</span>
+      <span class="spacer"></span>
+      <button class="btn" id="copy-me" title="${esc(meURL() || "先在插件设置里填写 public_base_url")}">复制自助查询链接</button>
+      <button class="btn" id="reload">刷新</button>
+    </header>
+    ${state.error ? `<div class="notice">插件存储不可用：${esc(state.error)}</div>` : ""}
+    <nav class="tabs" role="tablist">${tabs.map(([id, label]) => `<button class="tab" role="tab" data-tab="${id}" aria-selected="${view.tab === id}">${label}</button>`).join("")}</nav>
+    <main id="main"></main>`;
+  app.querySelectorAll("[data-tab]").forEach((b) => b.addEventListener("click", async () => {
+    view.tab = b.dataset.tab;
+    try {
+      if (view.tab === "overview") await loadUsage();
+      if (view.tab === "logs") await loadLogs();
+    } catch (e) { handleError(e); return; }
+    render();
+  }));
+  $("#reload").addEventListener("click", refresh);
+  $("#copy-me").addEventListener("click", () => {
+    if (!meURL()) { toast("先在插件设置里填写 public_base_url（用户访问 CPA 的地址）", true); return; }
+    copy(meURL(), "自助查询链接已复制，发给用户即可");
+  });
+  ({ overview: renderOverview, users: renderUsers, groups: renderGroups, logs: renderLogs })[view.tab]();
+}
+
+async function copy(text, msg) {
+  try { await navigator.clipboard.writeText(text); toast(msg || "已复制"); }
+  catch { prompt("复制下面的内容", text); }
+}
+
+// ---------- overview ----------
+function renderOverview() {
+  const main = $("#main");
+  const u = state.usage || { totals: {}, by_user: {}, by_model: {}, days: [] };
+  const today = state.users.reduce((a, x) => ({ t: a.t + x.quota.day.tokens, r: a.r + x.quota.day.requests }), { t: 0, r: 0 });
+  const month = state.users.reduce((a, x) => a + x.quota.month.tokens, 0);
+  const active = state.users.filter((x) => x.quota.day.requests > 0).length;
+  const running = state.users.reduce((a, x) => a + x.quota.running, 0);
+  main.innerHTML = `
+    <div class="kpis">
+      <div class="kpi"><div class="label">今日请求</div><div class="value">${fmtInt.format(today.r)}</div><div class="sub">进行中 ${running}</div></div>
+      <div class="kpi"><div class="label">今日 Token</div><div class="value">${num(today.t)}</div><div class="sub">插件用户合计</div></div>
+      <div class="kpi"><div class="label">本月 Token</div><div class="value">${num(month)}</div><div class="sub">时区 ${esc(state.timezone || "")}</div></div>
+      <div class="kpi"><div class="label">用户</div><div class="value">${active}<span class="faint" style="font-size:16px"> / ${state.users.length}</span></div><div class="sub">今日活跃 / 全部</div></div>
+    </div>
+    <section class="card">
+      <h2>每日用量
+        <span class="spacer"></span>
+        <span class="seg" id="metric">${[["tokens", "Token"], ["requests", "请求"]].map(([k, l]) => `<button data-v="${k}" aria-pressed="${view.metric === k}">${l}</button>`).join("")}</span>
+        <span class="seg" id="range">${[7, 14, 30].map((d) => `<button data-v="${d}" aria-pressed="${view.days === d}">${d} 天</button>`).join("")}</span>
+      </h2>
+      <div class="legend" id="legend"></div>
+      <div class="chart" id="chart"></div>
+    </section>
+    <section class="card">
+      <h2>用户额度与用量 <span class="faint" style="font-weight:400;font-size:13px">区间 = 最近 ${view.days} 天</span></h2>
+      <div class="table-scroll">${usersUsageTable(u)}</div>
+    </section>
+    <section class="card">
+      <h2>按模型（最近 ${view.days} 天）</h2>
+      <div class="table-scroll">${modelTable(u)}</div>
+    </section>`;
+  $("#metric").addEventListener("click", (e) => { const v = e.target.dataset.v; if (v) { view.metric = v; renderOverview(); } });
+  $("#range").addEventListener("click", async (e) => {
+    const v = Number(e.target.dataset.v);
+    if (!v) return;
+    view.days = v;
+    try { await loadUsage(); } catch (err) { handleError(err); return; }
+    renderOverview();
+  });
+  renderChart();
+}
+
+function usersUsageTable(u) {
+  const ids = new Set(state.users.map((x) => x.id));
+  Object.keys(u.by_user || {}).forEach((k) => ids.add(Number(k)));
+  if (!ids.size) return `<div class="empty">还没有用户。去「用户」页新建一个。</div>`;
+  const rows = [...ids].map((id) => {
+    const usr = userById(id);
+    const r = (u.by_user || {})[id] || {};
+    const color = usr ? userColor.get(id) : "var(--series-other)";
+    if (!usr) {
+      return `<tr><td><span class="swatch" style="background:${color}"></span>${esc(userLabel(id))}</td><td colspan="4" class="faint">不受插件管理</td>
+        <td class="num">${num(r.total_tokens)}</td><td class="num">${fmtInt.format(r.requests || 0)}</td><td class="num">${fmtInt.format(r.failed || 0)}</td><td>—</td></tr>`;
+    }
+    const q = usr.quota;
+    const lastUsed = Math.max(0, ...state.keys.filter((k) => k.user_id === id).map((k) => k.last_used_at));
+    return `<tr>
+      <td><div class="name-cell"><span><span class="swatch" style="background:${color}"></span>${esc(usr.name)}</span><small>${esc(groupById(usr.group_id)?.name || "无分组")}</small></div></td>
+      <td>${meter(q.day.tokens, usr.daily_tokens, " Token")}${usr.daily_requests ? meter(q.day.requests, usr.daily_requests, " 次") : ""}</td>
+      <td>${meter(q.month.tokens, usr.monthly_tokens, " Token")}${usr.monthly_requests ? meter(q.month.requests, usr.monthly_requests, " 次") : ""}</td>
+      <td class="num nowrap">${q.running}${usr.max_concurrency ? ` / ${usr.max_concurrency}` : ""}</td>
+      <td>${userStatus(usr)}</td>
+      <td class="num">${num(r.total_tokens)}</td>
+      <td class="num">${fmtInt.format(r.requests || 0)}</td>
+      <td class="num">${fmtInt.format(r.failed || 0)}</td>
+      <td class="nowrap">${when(lastUsed)}</td></tr>`;
+  });
+  return `<table><thead><tr><th>用户</th><th>今日</th><th>本月</th><th class="num">并发</th><th>状态</th><th class="num">区间 Token</th><th class="num">区间请求</th><th class="num">失败</th><th>最近使用</th></tr></thead><tbody>${rows.join("")}</tbody></table>`;
+}
+
+function modelTable(u) {
+  const entries = Object.entries(u.by_model || {}).sort((a, b) => b[1].total_tokens - a[1].total_tokens);
+  if (!entries.length) return `<div class="empty">这个时间段还没有请求。</div>`;
+  return `<table><thead><tr><th>模型</th><th class="num">请求</th><th class="num">失败</th><th class="num">输入</th><th class="num">输出</th><th class="num">合计 Token</th></tr></thead><tbody>
+    ${entries.map(([m, r]) => `<tr><td class="mono">${esc(m)}</td><td class="num">${fmtInt.format(r.requests)}</td><td class="num">${fmtInt.format(r.failed)}</td>
+      <td class="num">${num(r.input_tokens)}</td><td class="num">${num(r.output_tokens)}</td><td class="num">${num(r.total_tokens)}</td></tr>`).join("")}
+  </tbody></table>`;
+}
+
+// Stacked daily bars, one segment per user. Colours follow the user (creation
+// order), never their rank; users past the 7th and native-key traffic fold into a
+// neutral "其他" series.
+function renderChart() {
+  const host = $("#chart");
+  const legend = $("#legend");
+  if (!host || !state.usage) return;
+  const u = state.usage;
+  const metricKey = view.metric === "tokens" ? "total_tokens" : "requests";
+  const series = [];
+  const other = { id: "other", label: "其他", color: "var(--series-other)", values: u.days.map(() => 0) };
+  for (const [uid, daily] of Object.entries(u.user_daily || {})) {
+    const id = Number(uid);
+    const vals = daily.map((d) => d[metricKey] || 0);
+    if (!vals.some(Boolean)) continue;
+    const usr = userById(id);
+    const color = usr ? userColor.get(id) : null;
+    if (!usr || color === "var(--series-other)") {
+      vals.forEach((v, i) => { other.values[i] += v; });
+      if (id === 0) other.label = "其他 / 原生 Key";
+      continue;
+    }
+    series.push({ id, label: usr.name, color, values: vals, order: state.users.indexOf(usr) });
+  }
+  series.sort((a, b) => a.order - b.order);
+  if (other.values.some(Boolean)) series.push(other);
+
+  legend.innerHTML = series.length > 1 ? series.map((s) => `<span><i style="background:${s.color}"></i>${esc(s.label)}</span>`).join("") : "";
+  const totals = u.days.map((_, i) => series.reduce((a, s) => a + s.values[i], 0));
+  const max = Math.max(...totals, 0);
+  if (!max) { host.innerHTML = `<div class="empty">这个时间段还没有用量。</div>`; return; }
+
+  const W = Math.max(host.clientWidth, 320), H = 240, padL = 44, padR = 8, padT = 8, padB = 24;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+  const step = niceStep(max / 4);
+  const top = Math.ceil(max / step) * step;
+  const n = u.days.length;
+  const slot = plotW / n;
+  const bw = Math.max(4, Math.min(36, slot * 0.62));
+  const y = (v) => padT + plotH - (v / top) * plotH;
+  let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="每日用量">`;
+  for (let v = 0; v <= top + 1e-9; v += step) {
+    svg += `<line class="grid" x1="${padL}" x2="${W - padR}" y1="${y(v)}" y2="${y(v)}"/>`;
+    svg += `<text class="axis" x="${padL - 6}" y="${y(v) + 4}" text-anchor="end">${num(v)}</text>`;
+  }
+  const labelEvery = Math.ceil(n / Math.max(1, Math.floor(plotW / 54)));
+  u.days.forEach((d, i) => {
+    const cx = padL + slot * i + slot / 2;
+    if (i % labelEvery === 0 || i === n - 1) svg += `<text class="axis" x="${cx}" y="${H - 6}" text-anchor="middle">${d.slice(5)}</text>`;
+    let base = 0;
+    const segs = series.map((s) => ({ s, v: s.values[i] })).filter((x) => x.v > 0);
+    segs.forEach((seg, j) => {
+      const y0 = y(base), y1 = y(base + seg.v);
+      base += seg.v;
+      const isTop = j === segs.length - 1;
+      const gap = isTop ? 0 : 2; // 2px surface gap between stacked segments
+      const h = Math.max(1, y0 - y1 - gap);
+      const x = cx - bw / 2;
+      const d = isTop ? roundTop(x, y1, bw, Math.max(1, y0 - y1), Math.min(4, bw / 2)) : `M${x},${y1 + gap}h${bw}v${h}h${-bw}z`;
+      svg += `<path d="${d}" fill="${seg.s.color}"/>`;
+    });
+    svg += `<rect x="${padL + slot * i}" y="${padT}" width="${slot}" height="${plotH}" fill="transparent" data-day="${i}"/>`;
+  });
+  svg += `</svg>`;
+  host.innerHTML = svg;
+
+  const tip = $("#tip");
+  const unit = view.metric === "tokens" ? " Token" : " 次";
+  host.onmousemove = (e) => {
+    const t = e.target.closest("[data-day]");
+    if (!t) { tip.style.display = "none"; return; }
+    const i = Number(t.dataset.day);
+    const rows = series.filter((s) => s.values[i] > 0).reverse()
+      .map((s) => `<div><span class="swatch" style="background:${s.color}"></span>${esc(s.label)}　<b>${fmtInt.format(s.values[i])}</b>${unit}</div>`).join("");
+    tip.innerHTML = `<div class="muted" style="margin-bottom:4px">${esc(u.days[i])} · 合计 <b>${fmtInt.format(totals[i])}</b>${unit}</div>${rows || '<div class="faint">无用量</div>'}`;
+    tip.style.display = "block";
+    const r = tip.getBoundingClientRect();
+    let left = e.clientX + 14, topPx = e.clientY + 14;
+    if (left + r.width > innerWidth - 8) left = e.clientX - r.width - 14;
+    if (topPx + r.height > innerHeight - 8) topPx = e.clientY - r.height - 14;
+    tip.style.left = `${left + scrollX}px`;
+    tip.style.top = `${topPx + scrollY}px`;
+  };
+  host.onmouseleave = () => { tip.style.display = "none"; };
+  // Hover sits on transparent day columns drawn above the bars.
+  host.querySelectorAll("path").forEach((p) => { p.style.pointerEvents = "none"; });
+}
+function niceStep(raw) {
+  if (raw <= 0) return 1;
+  const p = Math.pow(10, Math.floor(Math.log10(raw)));
+  const f = raw / p;
+  return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * p;
+}
+function roundTop(x, y, w, h, r) {
+  r = Math.min(r, h);
+  return `M${x},${y + h}V${y + r}Q${x},${y} ${x + r},${y}H${x + w - r}Q${x + w},${y} ${x + w},${y + r}V${y + h}Z`;
+}
+window.addEventListener("resize", () => { if (view.tab === "overview") renderChart(); });
+
+// ---------- users ----------
+function renderUsers() {
+  const main = $("#main");
+  main.innerHTML = `
+    <section class="card">
+      <h2>用户 <span class="spacer"></span><button class="btn primary" id="new-user">新建用户</button></h2>
+      ${state.users.length ? `<div class="table-scroll"><table><thead><tr><th>用户</th><th>分组</th><th>可用模型</th><th>额度</th><th class="num">Key</th><th>状态</th><th></th></tr></thead><tbody>
+      ${state.users.map((u) => `<tr>
+        <td><div class="name-cell"><span><span class="swatch" style="background:${userColor.get(u.id)}"></span>${esc(u.name)}</span>${u.note ? `<small>${esc(u.note)}</small>` : ""}</div></td>
+        <td class="nowrap">${esc(groupById(u.group_id)?.name || "—")}</td>
+        <td>${modelChips(u.allowed, 3)}</td>
+        <td class="muted" style="font-size:13px">${limitSummary(u)}</td>
+        <td class="num">${u.key_count}</td>
+        <td class="nowrap">${userStatus(u)}${u.expires_at ? `<div class="hint">到期 ${new Date(u.expires_at * 1000 - 1).toLocaleDateString("zh-CN")}</div>` : ""}</td>
+        <td style="white-space:nowrap;text-align:right">
+          <button class="btn small" data-keys="${u.id}">Key</button>
+          <button class="btn small" data-edit="${u.id}">编辑</button>
+          <button class="btn small danger" data-del="${u.id}">删除</button></td></tr>`).join("")}
+      </tbody></table></div>` : `<div class="empty">还没有用户。先在「模型分组」建一个分组（可选），再新建用户并签发 Key。</div>`}
+    </section>
+    <section class="card">
+      <h2>怎么发给用户</h2>
+      ${cpaBase() ? `<div class="muted" style="font-size:13px">给每个人签发一个 Key，他们把客户端的 Base URL 指向 <code>${esc(cpaBase())}/v1</code>（Claude Code 用 <code>${esc(cpaBase())}</code>）即可。
+      用户可以打开 <a href="${esc(meURL())}" target="_blank" rel="noopener">自助查询页</a>，输入自己的 Key 查看可用模型和用量。原生 <code>api-keys</code> 不受本插件限制，适合留给管理员自己用。</div>`
+      : `<div class="notice" style="margin:0">还没有设置 CPA 的对外地址。到插件设置里填写 <code>public_base_url</code>（例如 https://cpa.example.com），接入说明和自助查询链接才会指向正确的地址。</div>`}
+    </section>`;
+  $("#new-user").addEventListener("click", () => openUserDialog(null));
+  main.querySelectorAll("[data-edit]").forEach((b) => b.addEventListener("click", () => openUserDialog(userById(Number(b.dataset.edit)))));
+  main.querySelectorAll("[data-keys]").forEach((b) => b.addEventListener("click", () => openKeysDialog(userById(Number(b.dataset.keys)))));
+  main.querySelectorAll("[data-del]").forEach((b) => b.addEventListener("click", async () => {
+    const u = userById(Number(b.dataset.del));
+    if (!confirm(`删除用户「${u.name}」？他的 ${u.key_count} 个 Key 会立即失效，历史用量会保留。`)) return;
+    try { await api("user/delete", { method: "POST", body: { id: u.id } }); toast("已删除"); await refresh(); } catch (e) { handleError(e); }
+  }));
+}
+
+function limitSummary(u) {
+  const parts = [];
+  if (u.daily_tokens) parts.push(`日 ${num(u.daily_tokens)} Token`);
+  if (u.daily_requests) parts.push(`日 ${num(u.daily_requests)} 次`);
+  if (u.monthly_tokens) parts.push(`月 ${num(u.monthly_tokens)} Token`);
+  if (u.monthly_requests) parts.push(`月 ${num(u.monthly_requests)} 次`);
+  if (u.max_concurrency) parts.push(`并发 ${u.max_concurrency}`);
+  return parts.length ? esc(parts.join(" · ")) : `<span class="faint">不限</span>`;
+}
+
+// ---------- dialogs ----------
+const dlg = $("#dlg");
+dlg.addEventListener("click", (e) => { if (e.target.closest("[data-close]")) dlg.close(); });
+function openDialog(title, bodyHTML, footHTML) {
+  $("#dlg-title").textContent = title;
+  $("#dlg-body").innerHTML = bodyHTML;
+  $("#dlg-foot").innerHTML = footHTML;
+  if (!dlg.open) dlg.showModal();
+}
+
+// A model picker: known models as checkboxes plus free-form patterns (supports *).
+function modelPicker(container, initial, { emptyHint } = {}) {
+  const selected = new Set((initial || []).map((m) => m.toLowerCase()));
+  container.innerHTML = `<div class="picker">
+    <div class="picker-top"><input class="input" placeholder="搜索模型，或输入规则如 gpt-5* 后回车" data-q>
+      <button class="btn small" type="button" data-add>添加规则</button>
+      <button class="btn small" type="button" data-all>全部模型 *</button>
+      <button class="btn small" type="button" data-refresh title="从 CPA 的凭证读取模型">刷新列表</button></div>
+    <div class="list" data-list></div>
+    <div class="selected" data-sel></div></div>`;
+  const q = $("[data-q]", container), list = $("[data-list]", container), sel = $("[data-sel]", container);
+  const draw = () => {
+    const term = q.value.trim().toLowerCase();
+    const models = state.models.filter((m) => !term || m.toLowerCase().includes(term));
+    list.innerHTML = models.length ? models.map((m) => `<label title="${esc(m)}"><input type="checkbox" value="${esc(m)}" ${selected.has(m.toLowerCase()) ? "checked" : ""}><span>${esc(m)}</span></label>`).join("")
+      : `<div class="faint" style="padding:6px">${state.models.length ? "没有匹配的模型，回车可作为规则添加" : "还没有发现模型：点「刷新列表」，或发一次 &#47;v1/models 请求"}</div>`;
+    sel.innerHTML = selected.size ? [...selected].sort().map((m) => `<span class="chip">${esc(m)}<button type="button" data-rm="${esc(m)}" aria-label="移除">×</button></span>`).join("")
+      : `<span class="faint">${esc(emptyHint || "未选择任何模型")}</span>`;
+  };
+  const addRule = () => { const v = q.value.trim().toLowerCase(); if (v) { selected.add(v); q.value = ""; draw(); } };
+  list.addEventListener("change", (e) => { const v = e.target.value.toLowerCase(); e.target.checked ? selected.add(v) : selected.delete(v); draw(); });
+  sel.addEventListener("click", (e) => { const v = e.target.dataset.rm; if (v) { selected.delete(v); draw(); } });
+  q.addEventListener("input", draw);
+  q.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); addRule(); } });
+  $("[data-add]", container).addEventListener("click", addRule);
+  $("[data-all]", container).addEventListener("click", () => { selected.add("*"); draw(); });
+  $("[data-refresh]", container).addEventListener("click", async () => {
+    try { const r = await api("models/refresh", { method: "POST", body: {} }); state.models = r.models || []; draw(); toast(r.added ? "已更新模型列表" : "没有新模型"); }
+    catch (e) { handleError(e); }
+  });
+  draw();
+  return { values: () => [...selected] };
+}
+
+function openGroupDialog(g) {
+  openDialog(g ? `编辑分组：${g.name}` : "新建分组", `
+    <div class="grid2">
+      <label class="field">名称<input id="g-name" value="${esc(g?.name || "")}" maxlength="40" required></label>
+      <label class="field">备注<input id="g-note" value="${esc(g?.note || "")}" maxlength="120"></label>
+    </div>
+    <div style="margin-top:14px"><div class="muted" style="font-size:13px;margin-bottom:6px">允许的模型 <span class="hint">勾选具体模型，或添加通配规则（* 匹配任意字符）</span></div><div id="g-models"></div></div>`,
+    `<button class="btn" data-close>取消</button><button class="btn primary" id="g-save">保存</button>`);
+  const picker = modelPicker($("#g-models"), g?.models, { emptyHint: "未选择：这个分组的用户将无法调用任何模型" });
+  $("#g-save").addEventListener("click", async () => {
+    const body = { id: g?.id || 0, name: $("#g-name").value.trim(), note: $("#g-note").value.trim(), models: picker.values() };
+    if (!body.name) return toast("请填写分组名称", true);
+    try { await api("group/save", { method: "POST", body }); dlg.close(); toast("已保存"); await refresh(); } catch (e) { handleError(e); }
+  });
+}
+
+function dateInputValue(ts) {
+  if (!ts) return "";
+  const d = new Date(ts * 1000 - 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function openUserDialog(u) {
+  const numField = (id, label, val, hint) => `<label class="field">${label}<input id="${id}" type="number" min="0" step="1" value="${val || ""}" placeholder="0 = 不限">${hint ? `<span class="hint">${hint}</span>` : ""}</label>`;
+  openDialog(u ? `编辑用户：${u.name}` : "新建用户", `
+    <div class="grid2">
+      <label class="field">名称<input id="u-name" value="${esc(u?.name || "")}" maxlength="40" required></label>
+      <label class="field">备注<input id="u-note" value="${esc(u?.note || "")}" maxlength="120"></label>
+      <label class="field">模型分组<select id="u-group"><option value="0">不使用分组</option>${state.groups.map((g) => `<option value="${g.id}" ${u?.group_id === g.id ? "selected" : ""}>${esc(g.name)}</option>`).join("")}</select></label>
+      <label class="field">到期日<input id="u-exp" type="date" value="${dateInputValue(u?.expires_at)}"><span class="hint">留空为永久；到期当天结束后停止服务</span></label>
+      ${numField("u-dt", "每日 Token 上限", u?.daily_tokens)}
+      ${numField("u-mt", "每月 Token 上限", u?.monthly_tokens)}
+      ${numField("u-dr", "每日请求上限", u?.daily_requests)}
+      ${numField("u-mr", "每月请求上限", u?.monthly_requests)}
+      ${numField("u-cc", "最大并发", u?.max_concurrency, "同时进行中的请求数")}
+      <label class="check" style="align-self:end;padding-bottom:8px"><input id="u-dis" type="checkbox" ${u?.disabled ? "checked" : ""}> 停用该用户</label>
+    </div>
+    <div style="margin-top:14px"><div class="muted" style="font-size:13px;margin-bottom:6px">额外允许的模型 <span class="hint">与分组的模型合并生效</span></div><div id="u-models"></div></div>
+    <div style="margin-top:12px" class="muted"><span style="font-size:13px">实际可用：</span><span id="u-effective"></span></div>
+    <p class="hint">Token 上限在请求开始前检查，单个请求可能略微超出，超出后的下一次请求会被拒绝。</p>`,
+    `<button class="btn" data-close>取消</button><button class="btn primary" id="u-save">保存</button>`);
+  const picker = modelPicker($("#u-models"), u?.extra_models, { emptyHint: "无额外模型" });
+  const effective = () => {
+    const g = groupById(Number($("#u-group").value));
+    const all = [...new Set([...(g?.models || []), ...picker.values()])].sort();
+    $("#u-effective").innerHTML = all.length ? modelChips(all, 12) : `<span style="color:var(--error-color)">无——该用户将无法调用任何模型</span>`;
+  };
+  $("#u-group").addEventListener("change", effective);
+  $("#u-models").addEventListener("click", () => setTimeout(effective));
+  $("#u-models").addEventListener("change", effective);
+  $("#u-models").addEventListener("keydown", () => setTimeout(effective));
+  effective();
+  $("#u-save").addEventListener("click", async () => {
+    const intv = (id) => Math.max(0, Math.floor(Number($(id).value) || 0));
+    const exp = $("#u-exp").value;
+    let expiresAt = 0;
+    if (exp) { const [y, m, d] = exp.split("-").map(Number); expiresAt = Math.floor(new Date(y, m - 1, d + 1).getTime() / 1000); }
+    const body = { id: u?.id || 0, name: $("#u-name").value.trim(), note: $("#u-note").value.trim(), group_id: Number($("#u-group").value),
+      extra_models: picker.values(), disabled: $("#u-dis").checked, expires_at: expiresAt,
+      daily_tokens: intv("#u-dt"), monthly_tokens: intv("#u-mt"), daily_requests: intv("#u-dr"), monthly_requests: intv("#u-mr"), max_concurrency: intv("#u-cc") };
+    if (!body.name) return toast("请填写用户名称", true);
+    try {
+      const r = await api("user/save", { method: "POST", body });
+      dlg.close(); toast("已保存"); await refresh();
+      if (!u) openKeysDialog(userById(r.id), true);
+    } catch (e) { handleError(e); }
+  });
+}
+
+function openKeysDialog(u, fresh) {
+  const draw = (newKey) => {
+    const keys = state.keys.filter((k) => k.user_id === u.id);
+    openDialog(`${u.name} 的 Key`, `
+      ${newKey ? `<div class="keybox"><div style="margin-bottom:6px"><b>新 Key 已生成</b> <span class="hint">只显示这一次，请现在复制</span></div>
+        <div class="mono" id="new-key">${esc(newKey)}</div>
+        <div class="row" style="margin-top:10px"><button class="btn small" id="copy-key">复制 Key</button><button class="btn small" id="copy-cfg">复制接入说明</button></div></div>` : ""}
+      ${keys.length ? `<table><thead><tr><th>名称</th><th>Key</th><th>创建</th><th>最近使用</th><th>状态</th><th></th></tr></thead><tbody>
+        ${keys.map((k) => `<tr><td>${esc(k.name || "—")}</td><td class="mono">${esc(k.hint)}</td><td>${new Date(k.created_at * 1000).toLocaleDateString("zh-CN")}</td><td>${when(k.last_used_at)}</td>
+          <td>${k.disabled ? `<span class="status off">已停用</span>` : `<span class="status">可用</span>`}</td>
+          <td style="text-align:right;white-space:nowrap"><button class="btn small" data-toggle="${k.id}">${k.disabled ? "启用" : "停用"}</button> <button class="btn small danger" data-kdel="${k.id}">删除</button></td></tr>`).join("")}
+      </tbody></table>` : `<div class="empty">${fresh ? "用户已创建，给他签发第一个 Key 吧。" : "还没有 Key。"}</div>`}
+      <div class="row" style="margin-top:14px"><input class="input" id="k-name" placeholder="Key 名称，例如 笔记本 / Claude Code" maxlength="40" style="flex:1"><button class="btn primary" id="k-new">签发新 Key</button></div>`,
+      `<button class="btn" data-close>完成</button>`);
+    if (newKey) {
+      $("#copy-key").addEventListener("click", () => copy(newKey, "Key 已复制"));
+      $("#copy-cfg").addEventListener("click", () => copy(
+        `OpenAI 兼容 Base URL：${cpaBase() || "<CPA 地址>"}/v1\nClaude Code（ANTHROPIC_BASE_URL）：${cpaBase() || "<CPA 地址>"}\nAPI Key：${newKey}${meURL() ? `\n自助查询：${meURL()}` : ""}`, "接入说明已复制"));
+    }
+    $("#k-new").addEventListener("click", async () => {
+      try {
+        const r = await api("key/create", { method: "POST", body: { user_id: u.id, name: $("#k-name").value.trim() } });
+        await loadState(); draw(r.key);
+      } catch (e) { handleError(e); }
+    });
+    $("#dlg-body").querySelectorAll("[data-toggle]").forEach((b) => b.addEventListener("click", async () => {
+      const k = keyById(Number(b.dataset.toggle));
+      try { await api("key/update", { method: "POST", body: { id: k.id, name: k.name, disabled: !k.disabled } }); await loadState(); draw(); } catch (e) { handleError(e); }
+    }));
+    $("#dlg-body").querySelectorAll("[data-kdel]").forEach((b) => b.addEventListener("click", async () => {
+      const k = keyById(Number(b.dataset.kdel));
+      if (!confirm(`删除 Key「${k.name || k.hint}」？使用它的客户端会立即无法访问。`)) return;
+      try { await api("key/delete", { method: "POST", body: { id: k.id } }); await loadState(); draw(); } catch (e) { handleError(e); }
+    }));
+  };
+  draw();
+  dlg.addEventListener("close", () => { if (view.tab === "users") render(); }, { once: true });
+}
+
+// ---------- groups ----------
+function renderGroups() {
+  const main = $("#main");
+  const count = (gid) => state.users.filter((u) => u.group_id === gid).length;
+  main.innerHTML = `
+    <section class="card">
+      <h2>模型分组 <span class="faint" style="font-weight:400;font-size:13px">一组可复用的模型白名单，用户可再单独追加</span><span class="spacer"></span>
+        <button class="btn primary" id="new-group">新建分组</button></h2>
+      ${state.groups.length ? `<div class="table-scroll"><table><thead><tr><th>分组</th><th>模型</th><th class="num">用户数</th><th></th></tr></thead><tbody>
+        ${state.groups.map((g) => `<tr><td><div class="name-cell"><span>${esc(g.name)}</span>${g.note ? `<small>${esc(g.note)}</small>` : ""}</div></td>
+          <td>${modelChips(g.models, 8)}</td><td class="num">${count(g.id)}</td>
+          <td style="text-align:right;white-space:nowrap"><button class="btn small" data-gedit="${g.id}">编辑</button> <button class="btn small danger" data-gdel="${g.id}">删除</button></td></tr>`).join("")}
+      </tbody></table></div>` : `<div class="empty">还没有分组。例如建一个「基础」分组只放便宜模型，再建一个「全部」分组用 * 放开所有模型。</div>`}
+    </section>
+    <section class="card">
+      <h2>已发现的模型 <span class="faint" style="font-weight:400;font-size:13px">${state.models.length} 个</span><span class="spacer"></span><button class="btn" id="refresh-models">从 CPA 刷新</button></h2>
+      <div>${state.models.length ? state.models.map((m) => `<span class="chip">${esc(m)}</span>`).join("") : `<span class="faint">还没有。点「从 CPA 刷新」，或用任意 Key 请求一次 &#47;v1/models。</span>`}</div>
+      <p class="hint">列表来自 CPA 凭证的模型、&#47;v1/models 的返回和实际请求。模型别名会在第一次出现在 &#47;v1/models 后加入。</p>
+    </section>`;
+  $("#new-group").addEventListener("click", () => openGroupDialog(null));
+  $("#refresh-models").addEventListener("click", async () => {
+    try { const r = await api("models/refresh", { method: "POST", body: {} }); state.models = r.models || []; renderGroups(); toast(r.added ? "已更新" : "没有新模型"); } catch (e) { handleError(e); }
+  });
+  main.querySelectorAll("[data-gedit]").forEach((b) => b.addEventListener("click", () => openGroupDialog(groupById(Number(b.dataset.gedit)))));
+  main.querySelectorAll("[data-gdel]").forEach((b) => b.addEventListener("click", async () => {
+    const g = groupById(Number(b.dataset.gdel));
+    const n = count(g.id);
+    if (!confirm(`删除分组「${g.name}」？${n ? `${n} 个用户会变成无分组，只保留各自的额外模型。` : ""}`)) return;
+    try { await api("group/delete", { method: "POST", body: { id: g.id } }); toast("已删除"); await refresh(); } catch (e) { handleError(e); }
+  }));
+}
+
+// ---------- logs ----------
+function renderLogs() {
+  const main = $("#main");
+  main.innerHTML = `
+    <section class="card">
+      <h2>请求记录
+        <span class="spacer"></span>
+        <select class="input" id="log-user"><option value="">全部用户</option>${state.users.map((u) => `<option value="${u.id}" ${String(u.id) === view.logUser ? "selected" : ""}>${esc(u.name)}</option>`).join("")}<option value="0" ${view.logUser === "0" ? "selected" : ""}>原生 Key / 其他</option></select>
+        <label class="check"><input type="checkbox" id="log-failed" ${view.logFailed ? "checked" : ""}> 只看失败</label>
+      </h2>
+      ${state.logs.length ? `<div class="table-scroll"><table><thead><tr><th>时间</th><th>用户</th><th>Key</th><th>模型</th><th>状态</th><th class="num">输入</th><th class="num">输出</th><th class="num">耗时</th><th class="num">首字</th></tr></thead><tbody>
+        ${state.logs.map((l) => `<tr title="${esc(l.error || "")}"><td style="white-space:nowrap">${new Date(l.ts * 1000).toLocaleString("zh-CN", { hour12: false })}</td>
+          <td>${esc(userLabel(l.user_id))}</td><td class="mono">${esc(keyById(l.key_id)?.name || keyById(l.key_id)?.hint || (l.key_id ? "#" + l.key_id : "—"))}</td>
+          <td class="mono">${esc(l.model)}</td>
+          <td>${l.failed ? `<span class="status bad">${l.status || "失败"}</span>` : `<span class="status">${l.status}</span>`}${l.stream ? ` <span class="faint">流式</span>` : ""}</td>
+          <td class="num">${fmtInt.format(l.input_tokens)}</td><td class="num">${fmtInt.format(l.output_tokens)}</td>
+          <td class="num">${(l.latency_ms / 1000).toFixed(1)}s</td><td class="num">${l.ttft_ms ? (l.ttft_ms / 1000).toFixed(1) + "s" : "—"}</td></tr>
+          ${l.failed && l.error ? `<tr><td></td><td colspan="8" class="hint mono" style="padding-top:0">${esc(l.error)}</td></tr>` : ""}`).join("")}
+      </tbody></table></div>` : `<div class="empty">没有记录。被插件拒绝（无权限 / 超额）的请求不会到达上游，也不会出现在这里。</div>`}
+      <p class="hint">最多显示最近 300 条；明细保留 ${state.config.log_retention || 30} 天，按小时汇总的数据永久保留。</p>
+    </section>`;
+  const reload = async () => { try { await loadLogs(); renderLogs(); } catch (e) { handleError(e); } };
+  $("#log-user").addEventListener("change", (e) => { view.logUser = e.target.value; reload(); });
+  $("#log-failed").addEventListener("change", (e) => { view.logFailed = e.target.checked; reload(); });
+}
+
+// ---------- login ----------
+function renderLogin(message) {
+  $("#app").innerHTML = `
+    <div class="login card">
+      <h2 style="font-size:17px">用户分发</h2>
+      <p class="muted" style="margin-top:0">输入 CPA 的管理密钥（remote-management.secret-key）。${document.documentElement.dataset.host === "cpamc" ? "在管理中心登录时勾选「记住密码」，以后打开这里就不用再输。" : document.documentElement.dataset.host === "frame" ? "在 Oh My CPA 中打开时会自动使用它保存的管理密钥；出现这个页面说明那个密钥没有被 CPA 接受。" : ""}</p>
+      ${message ? `<div class="notice">${esc(message)}</div>` : ""}
+      <form id="login-form" class="row"><input class="input" id="login-key" type="password" placeholder="管理密钥" autocomplete="current-password" style="flex:1" required><button class="btn primary">进入</button></form>
+    </div>`;
+  $("#login-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    mgmtKey = $("#login-key").value.trim();
+    writeSessionKey(mgmtKey);
+    try { await loadState(); await loadUsage(); render(); } catch (err) { handleError(err); }
+  });
+}
+
+async function start() {
+  // Try the remembered key first, then no key (a host such as Oh My CPA may supply
+  // one server-side), and only then ask.
+  const attempts = mgmtKey ? [mgmtKey, ""] : [""];
+  let lastAuthError = null;
+  for (const key of attempts) {
+    mgmtKey = key;
+    try {
+      await loadState();
+      await loadUsage();
+      render();
+      return;
+    } catch (e) {
+      if (!(e instanceof AuthError)) { handleError(e); return; }
+      lastAuthError = e;
+      if (key) writeSessionKey("");
+    }
+  }
+  renderLogin(attempts.length > 1 || parentDoc() ? lastAuthError?.message : "");
+}
+
+syncTheme();
+start();
+})();
+</script>
+</body>
+</html>
