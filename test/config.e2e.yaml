@@ -24,6 +24,8 @@ openai-compatibility:
         alias: ""
       - name: claude-opus-x
         alias: ""
+      - name: upstream-flash
+        alias: ds-alias
 plugins:
   enabled: true
   dir: "plugins"

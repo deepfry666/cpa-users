@@ -29,6 +29,9 @@ type Config struct {
 	// The console builds the self-service link and client setup hints from it;
 	// inside Oh My CPA the page's own origin is the console, not CPA.
 	PublicBaseURL string `yaml:"public_base_url"`
+	// CurrencySymbol is shown next to every amount. Prices are entered in this
+	// currency; the plugin does not convert.
+	CurrencySymbol string `yaml:"currency_symbol"`
 }
 
 func defaultConfig() Config {
@@ -39,6 +42,7 @@ func defaultConfig() Config {
 		FilterModelList:  &on,
 		KeyPrefix:        "sk-cu-",
 		LogRetentionDays: 30,
+		CurrencySymbol:   "$",
 	}
 }
 
@@ -66,6 +70,13 @@ func parseConfig(raw []byte) (Config, error) {
 		cfg.LogRetentionDays = 30
 	}
 	cfg.PublicBaseURL = strings.TrimRight(strings.TrimSpace(cfg.PublicBaseURL), "/")
+	cfg.CurrencySymbol = strings.TrimSpace(cfg.CurrencySymbol)
+	if cfg.CurrencySymbol == "" {
+		cfg.CurrencySymbol = "$"
+	}
+	if len([]rune(cfg.CurrencySymbol)) > 4 {
+		cfg.CurrencySymbol = string([]rune(cfg.CurrencySymbol)[:4])
+	}
 	return cfg, nil
 }
 
@@ -89,6 +100,7 @@ func configFields() []configField {
 		{Name: "filter_model_list", Type: "boolean", Default: true, Description: "按用户权限裁剪 /v1/models 返回的模型列表"},
 		{Name: "key_prefix", Type: "string", Default: "sk-cu-", Description: "签发 key 的前缀"},
 		{Name: "log_retention_days", Type: "integer", Default: 30, Description: "请求明细保留天数（按小时汇总的数据永久保留）"},
+		{Name: "currency_symbol", Type: "string", Default: "$", Description: "金额显示的货币符号，例如 $ 或 ¥；模型价格按这个货币填写"},
 		{Name: "public_base_url", Type: "string", Default: "", Description: "用户访问 CPA 的地址，例如 https://cpa.example.com；用于自助查询链接和接入说明，在 Oh My CPA 中必须填写"},
 	}
 }

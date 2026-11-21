@@ -19,7 +19,7 @@ const PluginID = "cpa-users"
 
 // PluginVersion is stamped by the release build (-X main.PluginVersion=...) so the
 // registered version always matches the release tag the store installs.
-var PluginVersion = "0.1.0"
+var PluginVersion = "0.2.0"
 
 const (
 	abiVersion uint32 = 1
@@ -195,6 +195,9 @@ type usageDetail struct {
 	ReasoningTokens int64 `json:"ReasoningTokens"`
 	CachedTokens    int64 `json:"CachedTokens"`
 	TotalTokens     int64 `json:"TotalTokens"`
+	// Claude reports cache reads and writes separately from input.
+	CacheReadTokens     int64 `json:"CacheReadTokens"`
+	CacheCreationTokens int64 `json:"CacheCreationTokens"`
 }
 
 type managementRegistrationRequest struct {

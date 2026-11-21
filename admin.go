@@ -12,6 +12,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -43,6 +44,10 @@ var managementRoutes = []route{
 	{http.MethodGet, "usage", "用量统计", (*App).apiUsage},
 	{http.MethodGet, "logs", "请求明细", (*App).apiLogs},
 	{http.MethodPost, "models/refresh", "从 CPA 凭证刷新可选模型", (*App).apiRefreshModels},
+	{http.MethodGet, "live", "实时并发与每分钟请求数", (*App).apiLive},
+	{http.MethodPost, "price/save", "新建或修改模型价格", (*App).apiSavePrice},
+	{http.MethodPost, "price/delete", "删除模型价格", (*App).apiDeletePrice},
+	{http.MethodPost, "prices/recompute", "按当前价格重算历史金额", (*App).apiRecomputeCosts},
 }
 
 func (a *App) managementRegistration() managementRegistrationResponse {
@@ -81,6 +86,10 @@ func (a *App) handleAPI(req managementRequest, path string) managementResponse {
 		if r.path == path && strings.EqualFold(r.method, req.Method) {
 			if a.db() == nil && path != "state" {
 				return jsonError(http.StatusServiceUnavailable, "插件存储不可用："+a.storageError())
+			}
+			if r.method == http.MethodPost {
+				a.writeMu.Lock()
+				defer a.writeMu.Unlock()
 			}
 			return r.handler(a, req)
 		}
@@ -181,25 +190,43 @@ func (a *App) apiState(_ managementRequest) managementResponse {
 		keyCount[k.UserID]++
 	}
 	views := make([]userView, 0, len(users))
+	runningTotal := 0
 	for _, u := range users {
-		views = append(views, userView{User: u, Allowed: a.state.patterns(u.ID), Quota: a.state.quota(u.ID, now), KeyCount: keyCount[u.ID]})
+		q := a.state.quota(u.ID, now)
+		runningTotal += q.Running
+		views = append(views, userView{User: u, Allowed: a.state.patterns(u.ID), Quota: q, KeyCount: keyCount[u.ID]})
+	}
+	prices := a.state.priceTable()
+	unpriced := []string{}
+	if st := a.db(); st != nil {
+		if used, err := st.usedModels(now.AddDate(0, 0, -30)); err == nil {
+			for _, m := range used {
+				if _, ok := prices.lookup(m); !ok {
+					unpriced = append(unpriced, m)
+				}
+			}
+		}
 	}
 	return jsonResponse(http.StatusOK, map[string]any{
-		"version":  PluginVersion,
-		"ready":    a.db() != nil,
-		"error":    map[bool]string{true: "", false: a.storageError()}[a.db() != nil],
-		"groups":   groups,
-		"users":    views,
-		"keys":     keys,
-		"models":   a.state.knownModels(),
-		"now":      now.Unix(),
-		"timezone": cfg.Timezone,
+		"version":         PluginVersion,
+		"ready":           a.db() != nil,
+		"error":           map[bool]string{true: "", false: a.storageError()}[a.db() != nil],
+		"groups":          groups,
+		"users":           views,
+		"keys":            keys,
+		"models":          a.state.knownModels(),
+		"prices":          prices.rows,
+		"unpriced_models": unpriced,
+		"running_total":   runningTotal,
+		"now":             now.Unix(),
+		"timezone":        cfg.Timezone,
 		"config": map[string]any{
 			"key_prefix":        cfg.KeyPrefix,
 			"filter_model_list": cfg.filterModels(),
 			"db_path":           cfg.DBPath,
 			"log_retention":     cfg.LogRetentionDays,
 			"public_base_url":   cfg.PublicBaseURL,
+			"currency_symbol":   cfg.CurrencySymbol,
 		},
 	})
 }
@@ -214,6 +241,12 @@ func (a *App) apiSaveGroup(req managementRequest) managementResponse {
 	g.Name = strings.TrimSpace(g.Name)
 	if g.Name == "" {
 		return jsonError(http.StatusBadRequest, "分组名称不能为空")
+	}
+	if len([]rune(g.Name)) > 64 || len([]rune(g.Note)) > 500 {
+		return jsonError(http.StatusBadRequest, "分组名称最多 64 字，备注最多 500 字")
+	}
+	if msg := checkPatterns(g.Models); msg != "" {
+		return jsonError(http.StatusBadRequest, msg)
 	}
 	id, err := a.db().saveGroup(g)
 	if err != nil {
@@ -235,6 +268,19 @@ func (a *App) apiDeleteGroup(req managementRequest) managementResponse {
 	return a.afterWrite(map[string]any{"ok": true})
 }
 
+// checkPatterns bounds model allowlists so one save cannot bloat every request.
+func checkPatterns(list []string) string {
+	if len(list) > 500 {
+		return "模型规则最多 500 条"
+	}
+	for _, p := range list {
+		if len(p) > 200 {
+			return "单条模型规则最多 200 个字符"
+		}
+	}
+	return ""
+}
+
 // ---- users ----
 
 func (a *App) apiSaveUser(req managementRequest) managementResponse {
@@ -246,8 +292,18 @@ func (a *App) apiSaveUser(req managementRequest) managementResponse {
 	if u.Name == "" {
 		return jsonError(http.StatusBadRequest, "用户名不能为空")
 	}
-	if u.DailyTokens < 0 || u.MonthlyTokens < 0 || u.DailyRequests < 0 || u.MonthlyRequests < 0 || u.MaxConcurrency < 0 {
+	if len([]rune(u.Name)) > 64 || len([]rune(u.Note)) > 500 {
+		return jsonError(http.StatusBadRequest, "用户名最多 64 字，备注最多 500 字")
+	}
+	if u.DailyTokens < 0 || u.MonthlyTokens < 0 || u.DailyRequests < 0 || u.MonthlyRequests < 0 || u.MaxConcurrency < 0 ||
+		u.RPMLimit < 0 || u.ExpiresAt < 0 {
 		return jsonError(http.StatusBadRequest, "额度不能为负数")
+	}
+	if !validMoney(u.DailyCostLimit) || !validMoney(u.MonthlyCostLimit) || !validMoney(u.TotalCostLimit) {
+		return jsonError(http.StatusBadRequest, "金额额度必须是 0 到 10 亿之间的数字")
+	}
+	if msg := checkPatterns(u.ExtraModels); msg != "" {
+		return jsonError(http.StatusBadRequest, msg)
 	}
 	id, err := a.db().saveUser(u)
 	if err != nil {
@@ -302,6 +358,9 @@ func (a *App) apiCreateKey(req managementRequest) managementResponse {
 	if err := decodeBody(req, &body); err != nil || body.UserID == 0 {
 		return jsonError(http.StatusBadRequest, "缺少用户 id")
 	}
+	if len([]rune(body.Name)) > 64 {
+		return jsonError(http.StatusBadRequest, "Key 名称最多 64 字")
+	}
 	if a.state.userName(body.UserID) == "" {
 		return jsonError(http.StatusNotFound, "用户不存在")
 	}
@@ -355,16 +414,20 @@ func (a *App) afterWrite(result map[string]any) managementResponse {
 // ---- usage ----
 
 type usageTotals struct {
-	Requests  int64 `json:"requests"`
-	Failed    int64 `json:"failed"`
-	Input     int64 `json:"input_tokens"`
-	Output    int64 `json:"output_tokens"`
-	Reasoning int64 `json:"reasoning_tokens"`
-	Cached    int64 `json:"cached_tokens"`
-	Total     int64 `json:"total_tokens"`
+	Requests  int64   `json:"requests"`
+	Failed    int64   `json:"failed"`
+	Input     int64   `json:"input_tokens"`
+	Output    int64   `json:"output_tokens"`
+	Reasoning int64   `json:"reasoning_tokens"`
+	Cached    int64   `json:"cached_tokens"`
+	Total     int64   `json:"total_tokens"`
+	Micros    int64   `json:"-"`
+	Cost      float64 `json:"cost"`
 }
 
 func (t *usageTotals) add(r hourlyRow) {
+	t.Micros += r.CostMicros
+	t.Cost = microsToMoney(t.Micros)
 	t.Requests += r.Requests
 	t.Failed += r.Failed
 	t.Input += r.Input
@@ -502,23 +565,39 @@ func (a *App) apiMe(req managementRequest) managementResponse {
 	if a.db() == nil {
 		return jsonError(http.StatusServiceUnavailable, "服务暂不可用")
 	}
+	client := clientAddr(req.Headers)
+	if !a.meLimit.allow(client, time.Now()) {
+		resp := jsonError(http.StatusTooManyRequests, "查询太频繁，请稍后再试")
+		resp.Headers.Set("Retry-After", "60")
+		return resp
+	}
 	key := extractKey(req.Headers, nil)
 	if key == "" || !strings.HasPrefix(key, a.config().KeyPrefix) {
+		a.meLimit.fail(client, time.Now())
 		return jsonError(http.StatusUnauthorized, "请输入有效的 API Key")
 	}
 	keyID, ok := a.state.keyByHash(hashKey(key))
 	if !ok {
+		a.meLimit.fail(client, time.Now())
 		return jsonError(http.StatusUnauthorized, "API Key 无效")
 	}
 	k, u, ok := a.state.lookup(keyID)
 	if !ok {
 		return jsonError(http.StatusUnauthorized, "API Key 无效")
 	}
+	if k.Disabled {
+		return jsonError(http.StatusUnauthorized, "API Key 已停用")
+	}
 	patterns := a.state.patterns(u.ID)
-	var available []string
+	available := []string{}
+	prices := []Price{}
+	table := a.state.priceTable()
 	for _, m := range a.state.knownModels() {
 		if modelAllowed(patterns, m) {
 			available = append(available, m)
+			if p, ok := table.lookup(m); ok {
+				prices = append(prices, Price{Model: m, Input: p.Input, Cached: p.Cached, Output: p.Output, PerRequest: p.PerRequest})
+			}
 		}
 	}
 	sort.Strings(available)
@@ -531,7 +610,8 @@ func (a *App) apiMe(req managementRequest) managementResponse {
 		return jsonError(http.StatusInternalServerError, err.Error())
 	}
 	for i := range logs {
-		logs[i].Error = "" // upstream error bodies stay admin-only
+		logs[i].Error = ""    // upstream error bodies stay admin-only
+		logs[i].Provider = "" // so does which upstream served it
 	}
 	now := time.Now()
 	return jsonResponse(http.StatusOK, map[string]any{
@@ -540,12 +620,145 @@ func (a *App) apiMe(req managementRequest) managementResponse {
 			"daily_tokens": u.DailyTokens, "monthly_tokens": u.MonthlyTokens,
 			"daily_requests": u.DailyRequests, "monthly_requests": u.MonthlyRequests,
 			"max_concurrency": u.MaxConcurrency, "blocked": userBlocked(u, now),
+			"daily_cost_limit": u.DailyCostLimit, "monthly_cost_limit": u.MonthlyCostLimit,
+			"total_cost_limit": u.TotalCostLimit, "rpm_limit": u.RPMLimit,
 		},
-		"key":       map[string]any{"name": k.Name, "hint": k.Hint, "disabled": k.Disabled},
-		"patterns":  patterns,
-		"available": available,
-		"quota":     a.state.quota(u.ID, now),
-		"usage":     rep,
-		"logs":      logs,
+		"currency_symbol": a.config().CurrencySymbol,
+		"prices":          prices,
+		"key":             map[string]any{"name": k.Name, "hint": k.Hint, "disabled": k.Disabled},
+		"patterns":        patterns,
+		"available":       available,
+		"quota":           a.state.quota(u.ID, now),
+		"usage":           rep,
+		"logs":            logs,
 	})
+}
+
+// ---- live ----
+
+func (a *App) apiLive(_ managementRequest) managementResponse {
+	now := time.Now()
+	users, total := a.state.live(now)
+	return jsonResponse(http.StatusOK, map[string]any{"now": now.Unix(), "running_total": total, "users": users})
+}
+
+// ---- prices ----
+
+func (a *App) apiSavePrice(req managementRequest) managementResponse {
+	var body struct {
+		Price
+		OldModel string `json:"old_model"`
+	}
+	if err := decodeBody(req, &body); err != nil {
+		return jsonError(http.StatusBadRequest, err.Error())
+	}
+	p := body.Price
+	p.Model = strings.ToLower(strings.TrimSpace(strings.TrimPrefix(strings.TrimSpace(p.Model), "models/")))
+	p.Note = strings.TrimSpace(p.Note)
+	if p.Model == "" || len(p.Model) > 200 {
+		return jsonError(http.StatusBadRequest, "模型名不能为空，最多 200 个字符")
+	}
+	if len([]rune(p.Note)) > 200 {
+		return jsonError(http.StatusBadRequest, "备注最多 200 字")
+	}
+	for _, v := range []float64{p.Input, p.Cached, p.Output, p.PerRequest} {
+		if !validMoney(v) {
+			return jsonError(http.StatusBadRequest, errBadPrice.Error())
+		}
+	}
+	if err := a.db().savePrice(p, strings.TrimSpace(body.OldModel)); err != nil {
+		return saveError(err)
+	}
+	return a.afterWrite(map[string]any{"ok": true})
+}
+
+func (a *App) apiDeletePrice(req managementRequest) managementResponse {
+	var body struct {
+		Model string `json:"model"`
+	}
+	if err := decodeBody(req, &body); err != nil || strings.TrimSpace(body.Model) == "" {
+		return jsonError(http.StatusBadRequest, "缺少模型名")
+	}
+	if err := a.db().deletePrice(strings.TrimSpace(body.Model)); err != nil {
+		return saveError(err)
+	}
+	return a.afterWrite(map[string]any{"ok": true})
+}
+
+func (a *App) apiRecomputeCosts(_ managementRequest) managementResponse {
+	a.acctMu.Lock()
+	defer a.acctMu.Unlock()
+	n, err := a.db().recomputeCosts(a.state.priceTable())
+	if err != nil {
+		return jsonError(http.StatusInternalServerError, err.Error())
+	}
+	a.seedCountersLocked()
+	return jsonResponse(http.StatusOK, map[string]any{"updated": n})
+}
+
+// ---- self-service rate limit ----
+
+// clientAddr picks the caller's address from proxy headers; CPA passes the
+// request headers to resource routes. Unknown callers share one bucket.
+func clientAddr(h http.Header) string {
+	if v := strings.TrimSpace(h.Get("X-Real-IP")); v != "" {
+		return v
+	}
+	if v := h.Get("X-Forwarded-For"); v != "" {
+		first, _, _ := strings.Cut(v, ",")
+		return strings.TrimSpace(first)
+	}
+	return "unknown"
+}
+
+// failLimiter blocks an address for a minute after too many failed key
+// lookups on the self-service page, and caps total lookups per minute.
+type failLimiter struct {
+	mu    sync.Mutex
+	seen  map[string]*limitBucket
+	clean time.Time
+}
+
+type limitBucket struct {
+	start         time.Time
+	hits, failure int
+}
+
+const (
+	meMaxPerMinute   = 60
+	meMaxFailsMinute = 10
+)
+
+func (l *failLimiter) bucket(addr string, now time.Time) *limitBucket {
+	if l.seen == nil {
+		l.seen = map[string]*limitBucket{}
+	}
+	if now.Sub(l.clean) > 5*time.Minute {
+		for k, b := range l.seen {
+			if now.Sub(b.start) > time.Minute {
+				delete(l.seen, k)
+			}
+		}
+		l.clean = now
+	}
+	b := l.seen[addr]
+	if b == nil || now.Sub(b.start) > time.Minute {
+		b = &limitBucket{start: now}
+		l.seen[addr] = b
+	}
+	return b
+}
+
+func (l *failLimiter) allow(addr string, now time.Time) bool {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	b := l.bucket(addr, now)
+	b.hits++
+	return b.hits <= meMaxPerMinute && b.failure < meMaxFailsMinute
+}
+
+func (l *failLimiter) fail(addr string, now time.Time) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.bucket(addr, now).failure++
 }

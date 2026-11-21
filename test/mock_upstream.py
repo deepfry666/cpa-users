@@ -2,7 +2,7 @@
 import json, sys, time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-MODELS = ["gpt-5.6-sol", "deepseek-v4-flash", "claude-opus-x"]
+MODELS = ["gpt-5.6-sol", "deepseek-v4-flash", "claude-opus-x", "upstream-flash"]
 
 class H(BaseHTTPRequestHandler):
     def log_message(self, *a): pass
@@ -20,6 +20,8 @@ class H(BaseHTTPRequestHandler):
         model = body.get("model", "?")
         time.sleep(float(body.get("metadata", {}).get("sleep", 0)) if isinstance(body.get("metadata"), dict) else 0)
         usage = {"prompt_tokens": 120, "completion_tokens": 30, "total_tokens": 150}
+        if self.path.endswith("/search") or "alpha" in self.path:
+            return self._json(200, {"leak": True})
         if body.get("stream"):
             self.send_response(200); self.send_header("Content-Type", "text/event-stream"); self.end_headers()
             for piece in ["Hello", " from", " mock"]:

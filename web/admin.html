@@ -7,144 +7,385 @@
 <style>
 :root {
   color-scheme: light;
-  /* Fallbacks match CPAMC's default theme; embedded pages copy the live values from the parent. */
-  --bg-secondary: #faf9f5; --bg-primary: #f0eee8; --bg-tertiary: #e9e6df; --bg-quinary: #f6f4ee;
-  --text-primary: #2d2a26; --text-secondary: #6d6760; --text-tertiary: #a29c95;
-  --border-color: #e3e1db; --border-primary: #d5d2cb;
-  --primary-color: #8b8680; --primary-hover: #7f7a74; --primary-contrast: #ffffff;
-  --success-color: #10b981; --error-color: #c65746; --warning-bg: rgba(198, 87, 70, 0.12);
-  --shadow: 0 1px 2px 0 rgb(0 0 0 / 0.08); --shadow-lg: 0 10px 18px -3px rgb(0 0 0 / 0.1);
+  /* Fallbacks match CPAMC's default theme; embedded pages copy live values from the parent. */
+  --bg-secondary: #faf9f5; --bg-primary: #f2f0ea; --bg-tertiary: #e7e4dc; --bg-quinary: #f6f4ee;
+  --text-primary: #22201d; --text-secondary: #625d56; --text-tertiary: #928c84;
+  --border-color: #e2dfd7; --border-primary: #d2cec4;
+  --primary-color: #2563eb; --primary-hover: #1d4ed8; --primary-contrast: #ffffff;
+  --accent: #2563eb; --accent-soft: rgba(37, 99, 235, 0.10);
+  --success-color: #16a34a; --error-color: #c65746; --warning-bg: rgba(198, 87, 70, 0.11);
+  --budget-ok: #16a34a; --budget-warn: #d97706; --budget-bad: #dc2626;
+  --warn-text: #92400e; --warn-surface: rgba(217, 119, 6, 0.11); --warn-border: rgba(217, 119, 6, 0.32);
+  --shadow: 0 1px 2px 0 rgb(0 0 0 / 0.06); --shadow-lg: 0 12px 24px -6px rgb(0 0 0 / 0.14);
   --radius-md: 8px;
-  --series-1: #2a78d6; --series-2: #eb6834; --series-3: #1baf7a; --series-4: #eda100;
-  --series-5: #e87ba4; --series-6: #008300; --series-7: #6250d6; --series-other: #a29c95;
+  --series-1: #2563eb; --series-2: #0d9488; --series-3: #d97706; --series-4: #7c3aed;
+  --series-5: #db2777; --series-6: #4f46e5; --series-7: #0284c7; --series-other: #94a3b8;
 }
 @media (prefers-color-scheme: dark) {
   :root:where(:not([data-theme="light"]):not([data-theme="white"]):not([data-host="cpamc"]):not([data-host="frame"])) {
     color-scheme: dark;
-    --bg-secondary: #151412; --bg-primary: #1d1b18; --bg-tertiary: #272420; --bg-quinary: #1a1816;
-    --text-primary: #f6f4f1; --text-secondary: #c9c3bb; --text-tertiary: #8f887f;
-    --border-color: #2f2b27; --border-primary: #3a3530;
-    --primary-color: #a39d96; --primary-hover: #b3ada6; --primary-contrast: #151412;
-    --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500;
-    --series-5: #d55181; --series-6: #008300; --series-7: #9085e9; --series-other: #6f6962;
+    --bg-secondary: #141311; --bg-primary: #1c1a17; --bg-tertiary: #26231f; --bg-quinary: #181715;
+    --text-primary: #f3f1ed; --text-secondary: #bcb6ae; --text-tertiary: #878179;
+    --border-color: #2d2925; --border-primary: #3a352f;
+    --primary-color: #5b93f8; --primary-hover: #74a4fa; --primary-contrast: #101216;
+    --accent: #5b93f8; --accent-soft: rgba(91, 147, 248, 0.14);
+    --budget-ok: #22c55e; --budget-warn: #f59e0b; --budget-bad: #ef4444;
+    --warn-text: #fbbf24; --warn-surface: rgba(245, 158, 11, 0.14); --warn-border: rgba(245, 158, 11, 0.36);
+    --series-1: #5b93f8; --series-2: #2dd4bf; --series-3: #f59e0b; --series-4: #a78bfa;
+    --series-5: #f472b6; --series-6: #818cf8; --series-7: #38bdf8; --series-other: #6e6962;
   }
 }
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --bg-secondary: #151412; --bg-primary: #1d1b18; --bg-tertiary: #272420; --bg-quinary: #1a1816;
-  --text-primary: #f6f4f1; --text-secondary: #c9c3bb; --text-tertiary: #8f887f;
-  --border-color: #2f2b27; --border-primary: #3a3530;
-  --primary-color: #a39d96; --primary-hover: #b3ada6; --primary-contrast: #151412;
-  --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500;
-  --series-5: #d55181; --series-6: #008300; --series-7: #9085e9; --series-other: #6f6962;
+  --bg-secondary: #141311; --bg-primary: #1c1a17; --bg-tertiary: #26231f; --bg-quinary: #181715;
+  --text-primary: #f3f1ed; --text-secondary: #bcb6ae; --text-tertiary: #878179;
+  --border-color: #2d2925; --border-primary: #3a352f;
+  --primary-color: #5b93f8; --primary-hover: #74a4fa; --primary-contrast: #101216;
+  --accent: #5b93f8; --accent-soft: rgba(91, 147, 248, 0.14);
+  --budget-ok: #22c55e; --budget-warn: #f59e0b; --budget-bad: #ef4444;
+  --warn-text: #fbbf24; --warn-surface: rgba(245, 158, 11, 0.14); --warn-border: rgba(245, 158, 11, 0.36);
+  --series-1: #5b93f8; --series-2: #2dd4bf; --series-3: #f59e0b; --series-4: #a78bfa;
+  --series-5: #f472b6; --series-6: #818cf8; --series-7: #38bdf8; --series-other: #6e6962;
 }
 /* Oh My CPA frames plugin pages with only a light/dark flag, so the page carries OMC's palette. */
 :root[data-host="frame"] {
-  --bg-secondary: #ffffff; --bg-primary: #f1f1f3; --bg-tertiary: #e5e5ea; --bg-quinary: #f7f7f8;
-  --text-primary: #1c1c1e; --text-secondary: #5c5c64; --text-tertiary: #787880;
-  --border-color: #dcdce1; --border-primary: #cbcbd2; --radius-md: 6px;
+  --bg-secondary: #ffffff; --bg-primary: #f5f5f7; --bg-tertiary: #e8e8ed; --bg-quinary: #f9f9fb;
+  --text-primary: #18181b; --text-secondary: #52525b; --text-tertiary: #71717a;
+  --border-color: #e4e4e7; --border-primary: #d4d4d8; --radius-md: 6px;
 }
 :root[data-host="frame"][data-theme="dark"] {
-  --bg-secondary: #121214; --bg-primary: #1c1c1f; --bg-tertiary: #26262b; --bg-quinary: #18181b;
+  --bg-secondary: #111113; --bg-primary: #1a1a1d; --bg-tertiary: #252529; --bg-quinary: #161619;
   --text-primary: #f4f4f6; --text-secondary: #a1a1aa; --text-tertiary: #7c7c86;
-  --border-color: #2c2c30; --border-primary: #3a3a41;
+  --border-color: #2a2a2f; --border-primary: #393940;
 }
+
 * { box-sizing: border-box; }
-html, body { margin: 0; }
+html, body { margin: 0; padding: 0; overflow-x: clip; }
 body {
-  background: var(--bg-secondary); color: var(--text-primary);
-  font: 14px/1.5 -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font: 14px/1.5 -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Segoe UI", Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 button, input, select, textarea { font: inherit; color: inherit; }
-.wrap { max-width: 1240px; margin: 0 auto; padding: 20px 20px 48px; }
-header.top { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
-header.top h1 { font-size: 20px; margin: 0; font-weight: 650; letter-spacing: .2px; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.wrap { max-width: 1320px; margin: 0 auto; padding: 18px 20px 52px; }
+header.top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+header.top h1 { font-size: 19px; margin: 0; font-weight: 650; letter-spacing: -0.01em; }
+.ver { font-size: 12px; color: var(--text-tertiary); font-variant-numeric: tabular-nums; }
 /* CPAMC floats its own toolbar over the top-right corner of plugin pages. */
 :root[data-host="cpamc"] header.top { padding-right: 170px; min-height: 44px; }
 @media (max-width: 640px) { :root[data-host="cpamc"] header.top { padding-right: 0; padding-top: 44px; } }
-td.nowrap, th.nowrap { white-space: nowrap; }
+
 .muted { color: var(--text-secondary); }
 .faint { color: var(--text-tertiary); }
-.spacer { flex: 1; }
-.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border-color); margin-bottom: 18px; overflow-x: auto; }
-.tab { border: 0; background: none; padding: 9px 14px; cursor: pointer; color: var(--text-secondary); border-bottom: 2px solid transparent; margin-bottom: -1px; white-space: nowrap; }
-.tab[aria-selected="true"] { color: var(--text-primary); border-bottom-color: var(--text-primary); font-weight: 600; }
-.btn { border: 1px solid var(--border-primary); background: var(--bg-primary); border-radius: var(--radius-md); padding: 6px 12px; cursor: pointer; white-space: nowrap; }
-.btn:hover { background: var(--bg-tertiary); }
-.btn.primary { background: var(--text-primary); color: var(--bg-secondary); border-color: var(--text-primary); }
-.btn.primary:hover { opacity: .9; }
-.btn.danger { color: var(--error-color); }
-.btn.small { padding: 3px 9px; font-size: 13px; }
-.btn:disabled { opacity: .5; cursor: default; }
-.card { background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 12px; padding: 16px; }
+.spacer { flex: 1; min-width: 8px; }
+.nowrap { white-space: nowrap; }
+.mono, code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 12.5px; }
+.tnum { font-variant-numeric: tabular-nums; }
+
+.warn-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 10px; border-radius: 999px;
+  background: var(--warn-surface); border: 1px solid var(--warn-border);
+  color: var(--warn-text); font-size: 12.5px; font-weight: 500;
+  cursor: pointer; white-space: nowrap;
+}
+.warn-pill:hover { filter: brightness(0.96); }
+.warn-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--budget-warn); flex-shrink: 0; }
+
+.tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--border-color); margin-bottom: 16px; overflow-x: auto; scrollbar-width: none; }
+.tabs::-webkit-scrollbar { display: none; }
+.tab {
+  position: relative; border: 0; background: none; padding: 9px 14px; cursor: pointer;
+  color: var(--text-secondary); border-bottom: 2px solid transparent; margin-bottom: -1px;
+  white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; font-size: 14px;
+}
+.tab:hover { color: var(--text-primary); }
+.tab[aria-selected="true"] { color: var(--text-primary); border-bottom-color: var(--accent); font-weight: 600; }
+.tab-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px;
+  background: var(--warn-surface); color: var(--warn-text); border: 1px solid var(--warn-border);
+  font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums;
+}
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  border: 1px solid var(--border-primary); background: var(--bg-primary);
+  border-radius: var(--radius-md); padding: 6px 12px; cursor: pointer;
+  white-space: nowrap; font-size: 13.5px; line-height: 1.3;
+  transition: background-color .12s, border-color .12s, opacity .12s;
+}
+.btn:hover:not(:disabled) { background: var(--bg-tertiary); }
+.btn.primary { background: var(--accent); color: #ffffff; border-color: var(--accent); }
+.btn.primary:hover:not(:disabled) { opacity: 0.92; background: var(--accent); }
+.btn.danger { color: var(--budget-bad); }
+.btn.danger:hover:not(:disabled) { background: var(--warning-bg); border-color: var(--budget-bad); }
+.btn.small { padding: 4px 9px; font-size: 12.5px; }
+.btn.ghost { background: transparent; border-color: transparent; color: var(--text-secondary); }
+.btn.ghost:hover:not(:disabled) { background: var(--bg-tertiary); color: var(--text-primary); }
+.btn:disabled { opacity: 0.45; cursor: default; }
+
+.card {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 16px;
+}
 .card + .card { margin-top: 14px; }
-.card h2 { font-size: 15px; margin: 0 0 12px; font-weight: 600; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 14px; }
-.kpi { background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 12px; padding: 14px 16px; }
-.kpi .label { color: var(--text-secondary); font-size: 13px; }
-.kpi .value { font-size: 26px; font-weight: 650; margin-top: 4px; font-variant-numeric: tabular-nums; }
-.kpi .sub { color: var(--text-tertiary); font-size: 12px; margin-top: 2px; }
+.card-head {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  margin: 0 0 12px;
+}
+.card-head h2 { font-size: 15px; margin: 0; font-weight: 600; }
+.card-sub { font-size: 12.5px; color: var(--text-tertiary); font-weight: 400; }
+
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+@media (max-width: 1040px) { .kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 600px) { .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.kpi {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 13px 15px;
+  min-width: 0;
+}
+.kpi-label {
+  display: flex; align-items: center; gap: 6px;
+  color: var(--text-secondary); font-size: 12.5px; white-space: nowrap;
+}
+.kpi-value {
+  font-size: 24px; font-weight: 650; margin-top: 4px;
+  font-variant-numeric: tabular-nums; letter-spacing: -0.02em;
+  display: flex; align-items: baseline; gap: 4px; flex-wrap: wrap;
+}
+.kpi-value .denom { font-size: 14px; font-weight: 400; color: var(--text-tertiary); }
+.kpi-sub { color: var(--text-tertiary); font-size: 12px; margin-top: 3px; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.live-dot {
+  display: inline-block; width: 7px; height: 7px; border-radius: 50%;
+  background: var(--text-tertiary); flex-shrink: 0; opacity: 0.45;
+}
+.live-dot.active {
+  background: var(--budget-ok); opacity: 1;
+  box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.55);
+  animation: pulse-live 1.8s ease-out infinite;
+}
+@keyframes pulse-live {
+  0% { box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.55); }
+  70% { box-shadow: 0 0 0 6px rgba(22, 163, 74, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(22, 163, 74, 0); }
+}
+
+.table-scroll { overflow-x: auto; max-width: 100%; -webkit-overflow-scrolling: touch; }
 table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
-th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
-th { color: var(--text-secondary); font-weight: 500; font-size: 13px; white-space: nowrap; }
-td.num, th.num { text-align: right; }
+th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
+th { color: var(--text-secondary); font-weight: 500; font-size: 12.5px; white-space: nowrap; }
+th.sortable { cursor: pointer; user-select: none; }
+th.sortable:hover { color: var(--text-primary); }
+th .sort-ind { display: inline-block; margin-left: 3px; font-size: 11px; color: var(--accent); }
+td.num, th.num { text-align: right; white-space: nowrap; }
+td.mono { white-space: nowrap; }
 tr:last-child td { border-bottom: 0; }
-.table-scroll { overflow-x: auto; }
-.chip { display: inline-block; padding: 1px 8px; border-radius: 999px; background: var(--bg-tertiary); font-size: 12px; margin: 2px 4px 2px 0; white-space: nowrap; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
-.status { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; white-space: nowrap; }
-.status::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--success-color); }
+tbody tr.sub-err td { border-bottom: 1px solid var(--border-color); padding-top: 0; padding-bottom: 9px; }
+tbody tr.has-err td { border-bottom: 0; }
+.err-box {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12px; color: var(--budget-bad);
+  background: var(--warning-bg); border-radius: 6px; padding: 5px 8px;
+  word-break: break-word; white-space: pre-wrap; max-width: 100%;
+}
+
+.chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 8px; border-radius: 999px;
+  background: var(--bg-tertiary); font-size: 12px;
+  margin: 2px 4px 2px 0; white-space: nowrap;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+.chip.warn { background: var(--warn-surface); color: var(--warn-text); border: 1px solid var(--warn-border); }
+.chip button { border: 0; background: none; padding: 0 0 0 3px; cursor: pointer; color: var(--text-tertiary); font-size: 13px; line-height: 1; }
+.chip button:hover { color: var(--text-primary); }
+
+.status { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; white-space: nowrap; }
+.status::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--budget-ok); flex-shrink: 0; }
 .status.off::before { background: var(--text-tertiary); }
-.status.bad::before { background: var(--error-color); }
-.meter { display: grid; gap: 3px; min-width: 120px; }
-.meter .bar { height: 5px; border-radius: 3px; background: var(--bg-tertiary); overflow: hidden; }
-.meter .bar > span { display: block; height: 100%; background: var(--text-secondary); border-radius: 3px; }
-.meter .bar > span.hot { background: var(--error-color); }
-.meter small { color: var(--text-secondary); font-size: 12px; white-space: nowrap; }
-.row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-.seg { display: inline-flex; border: 1px solid var(--border-primary); border-radius: var(--radius-md); overflow: hidden; }
-.seg button { border: 0; background: var(--bg-primary); padding: 4px 10px; cursor: pointer; color: var(--text-secondary); }
+.status.bad::before { background: var(--budget-bad); }
+
+.live-cell { display: inline-flex; align-items: center; justify-content: flex-end; gap: 6px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.live-cell .running-num { font-weight: 600; }
+.live-cell .running-num.active { color: var(--budget-ok); }
+
+.meter { display: grid; gap: 3px; min-width: 138px; }
+.meter-top { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; white-space: nowrap; font-size: 13px; }
+.meter-spent { font-weight: 600; }
+.meter-limit { color: var(--text-tertiary); font-size: 12px; }
+.meter .bar { height: 5px; border-radius: 99px; background: var(--bg-tertiary); overflow: hidden; }
+.meter .bar > span { display: block; height: 100%; border-radius: 99px; transition: width .2s ease; }
+.meter .bar > span.ok { background: var(--budget-ok); }
+.meter .bar > span.warn { background: var(--budget-warn); }
+.meter .bar > span.bad { background: var(--budget-bad); }
+.meter-sub { color: var(--text-tertiary); font-size: 11.5px; white-space: nowrap; }
+
+.row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.seg { display: inline-flex; border: 1px solid var(--border-primary); border-radius: var(--radius-md); overflow: hidden; background: var(--bg-secondary); }
+.seg button { border: 0; background: transparent; padding: 4px 10px; cursor: pointer; color: var(--text-secondary); font-size: 12.5px; }
+.seg button + button { border-left: 1px solid var(--border-color); }
 .seg button[aria-pressed="true"] { background: var(--bg-tertiary); color: var(--text-primary); font-weight: 600; }
-.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; color: var(--text-secondary); margin-bottom: 8px; }
-.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12.5px; color: var(--text-secondary); margin-bottom: 8px; }
+.legend-item { display: inline-flex; align-items: center; gap: 6px; }
+.legend-swatch { display: inline-block; width: 9px; height: 9px; border-radius: 2px; flex-shrink: 0; }
 .chart { position: relative; }
-.chart svg { display: block; width: 100%; height: 240px; overflow: visible; }
+.chart svg { display: block; width: 100%; height: 230px; overflow: visible; }
 .chart .grid { stroke: var(--border-color); stroke-width: 1; }
-.chart .axis { fill: var(--text-tertiary); font-size: 11px; }
-.tip { position: absolute; pointer-events: none; background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 8px; padding: 8px 10px; font-size: 12px; box-shadow: var(--shadow-lg); white-space: nowrap; z-index: 5; display: none; }
-.tip b { font-weight: 600; }
-.empty { padding: 28px 12px; text-align: center; color: var(--text-secondary); }
-.notice { padding: 10px 12px; border-radius: 8px; background: var(--warning-bg); color: var(--text-primary); margin-bottom: 14px; }
+.chart .axis { fill: var(--text-tertiary); font-size: 11px; font-variant-numeric: tabular-nums; }
+
+.tip {
+  position: fixed; pointer-events: none;
+  background: var(--bg-secondary); border: 1px solid var(--border-primary);
+  border-radius: 8px; padding: 8px 10px; font-size: 12px;
+  box-shadow: var(--shadow-lg); white-space: nowrap; z-index: 60; display: none;
+  font-variant-numeric: tabular-nums;
+}
+.tip-head { color: var(--text-secondary); margin-bottom: 4px; }
+.tip-row { display: flex; align-items: center; gap: 6px; justify-content: space-between; margin-top: 2px; }
+.tip-label { display: inline-flex; align-items: center; gap: 5px; }
+
+.empty { padding: 30px 12px; text-align: center; color: var(--text-secondary); display: grid; gap: 10px; justify-items: center; }
+.notice { padding: 10px 12px; border-radius: 8px; background: var(--warning-bg); color: var(--text-primary); margin-bottom: 14px; font-size: 13px; }
+.notice.warn-box { background: var(--warn-surface); border: 1px solid var(--warn-border); }
 .hint { font-size: 12px; color: var(--text-tertiary); }
-code, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; }
+
 .grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 16px; }
-@media (max-width: 720px) { .grid2 { grid-template-columns: 1fr; } }
+.grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px 14px; }
+@media (max-width: 680px) { .grid2, .grid3 { grid-template-columns: 1fr; } }
+
 label.field { display: grid; gap: 4px; font-size: 13px; color: var(--text-secondary); }
-label.field input, label.field select, label.field textarea, .input { padding: 7px 10px; border: 1px solid var(--border-primary); border-radius: var(--radius-md); background: var(--bg-secondary); color: var(--text-primary); min-width: 0; }
-label.check { display: inline-flex; gap: 6px; align-items: center; font-size: 13px; cursor: pointer; }
-dialog { border: 1px solid var(--border-primary); border-radius: 14px; padding: 0; background: var(--bg-secondary); color: var(--text-primary); width: min(720px, calc(100vw - 32px)); max-height: calc(100vh - 48px); box-shadow: var(--shadow-lg); }
-dialog::backdrop { background: rgb(0 0 0 / .35); }
-.dlg-head { display: flex; align-items: center; padding: 14px 18px; border-bottom: 1px solid var(--border-color); }
-.dlg-head h3 { margin: 0; font-size: 16px; }
-.dlg-body { padding: 16px 18px; overflow: auto; max-height: calc(100vh - 190px); }
-.dlg-foot { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 18px; border-top: 1px solid var(--border-color); }
+label.field input, label.field select, label.field textarea, .input {
+  padding: 7px 10px; border: 1px solid var(--border-primary);
+  border-radius: var(--radius-md); background: var(--bg-secondary);
+  color: var(--text-primary); min-width: 0; width: 100%;
+}
+.input.auto-w { width: auto; }
+label.field input:focus, label.field select:focus, .input:focus {
+  outline: 2px solid var(--accent-soft); border-color: var(--accent);
+}
+.prefix-input {
+  display: flex; align-items: center;
+  border: 1px solid var(--border-primary); border-radius: var(--radius-md);
+  background: var(--bg-secondary); overflow: hidden;
+}
+.prefix-input:focus-within { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
+.prefix-input .prefix {
+  padding: 0 8px 0 10px; color: var(--text-tertiary); font-size: 13px;
+  user-select: none; flex-shrink: 0;
+}
+.prefix-input input {
+  border: 0 !important; outline: none !important; background: transparent !important;
+  padding: 7px 10px 7px 2px; width: 100%; min-width: 0; font-variant-numeric: tabular-nums;
+}
+
+label.check { display: inline-flex; gap: 6px; align-items: center; font-size: 13px; cursor: pointer; user-select: none; }
+
+.form-section { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border-color); }
+.form-section-title { font-size: 13px; font-weight: 600; color: var(--text-primary); margin: 0 0 10px; display: flex; align-items: center; gap: 8px; }
+details.adv { margin-top: 14px; border: 1px solid var(--border-color); border-radius: 10px; background: var(--bg-quinary); }
+details.adv summary {
+  padding: 9px 12px; cursor: pointer; font-size: 13px; font-weight: 500;
+  color: var(--text-secondary); user-select: none; list-style: none;
+  display: flex; align-items: center; justify-content: space-between;
+}
+details.adv summary::-webkit-details-marker { display: none; }
+details.adv summary::after { content: "展开"; font-size: 12px; color: var(--text-tertiary); }
+details.adv[open] summary::after { content: "收起"; }
+details.adv .adv-body { padding: 4px 12px 12px; }
+
+dialog {
+  border: 1px solid var(--border-primary); border-radius: 14px; padding: 0;
+  background: var(--bg-secondary); color: var(--text-primary);
+  width: min(740px, calc(100vw - 24px)); max-height: calc(100% - 32px);
+  box-shadow: var(--shadow-lg);
+}
+dialog[open] { display: flex; flex-direction: column; }
+dialog::backdrop { background: rgb(0 0 0 / 0.4); }
+.dlg-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid var(--border-color); flex-shrink: 0; }
+.dlg-head h3 { margin: 0; font-size: 16px; font-weight: 600; }
+.dlg-body { padding: 16px 18px; overflow: auto; flex: 1; min-height: 0; }
+.dlg-foot { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 18px; border-top: 1px solid var(--border-color); flex-shrink: 0; }
+
 .picker { border: 1px solid var(--border-primary); border-radius: 10px; overflow: hidden; }
-.picker .picker-top { display: flex; gap: 8px; padding: 8px; border-bottom: 1px solid var(--border-color); background: var(--bg-primary); flex-wrap: wrap; }
+.picker .picker-top { display: flex; gap: 6px; padding: 8px; border-bottom: 1px solid var(--border-color); background: var(--bg-primary); flex-wrap: wrap; }
 .picker .picker-top input { flex: 1; min-width: 140px; }
-.picker .list { max-height: 220px; overflow: auto; padding: 6px 8px; display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 2px 10px; }
+.picker .list { max-height: 200px; overflow: auto; padding: 6px 8px; display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 2px 10px; }
 .picker .list label { display: flex; align-items: center; gap: 6px; font-size: 13px; padding: 3px 2px; cursor: pointer; overflow: hidden; }
-.picker .list label span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; }
-.picker .selected { padding: 8px; border-top: 1px solid var(--border-color); min-height: 38px; }
-.chip button { border: 0; background: none; padding: 0 0 0 4px; cursor: pointer; color: var(--text-tertiary); }
-.keybox { padding: 12px; border-radius: 10px; border: 1px dashed var(--border-primary); background: var(--bg-primary); margin: 10px 0; }
-.keybox .mono { word-break: break-all; font-size: 13.5px; }
-.login { max-width: 420px; margin: 12vh auto; }
-.toast { position: fixed; right: 18px; bottom: 18px; background: var(--text-primary); color: var(--bg-secondary); padding: 9px 14px; border-radius: 10px; box-shadow: var(--shadow-lg); z-index: 50; display: none; max-width: 70vw; }
-.toast.err { background: var(--error-color); color: #fff; }
-.name-cell { display: grid; }
-.name-cell small { color: var(--text-tertiary); }
-.swatch { display: inline-block; width: 9px; height: 9px; border-radius: 3px; margin-right: 6px; }
-@media (max-width: 640px) { .wrap { padding: 14px 16px 40px; } .kpi .value { font-size: 22px; } }
+.picker .list label span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 12.5px; }
+.picker .selected { padding: 8px; border-top: 1px solid var(--border-color); min-height: 36px; }
+
+.keybox { padding: 12px; border-radius: 10px; border: 1px dashed var(--accent); background: var(--accent-soft); margin: 0 0 12px; }
+.keybox .mono { word-break: break-all; font-size: 13.5px; font-weight: 600; }
+
+.price-add-bar {
+  display: grid;
+  grid-template-columns: minmax(160px, 1.5fr) repeat(4, minmax(84px, 0.8fr)) minmax(110px, 1fr) auto;
+  gap: 8px; align-items: end;
+  padding: 12px; border-radius: 10px;
+  background: var(--bg-secondary); border: 1px solid var(--border-color);
+  margin-bottom: 14px;
+}
+@media (max-width: 860px) {
+  .price-add-bar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .price-add-bar .span-full { grid-column: 1 / -1; }
+}
+.price-table input.cell-in {
+  padding: 5px 8px; border: 1px solid transparent; border-radius: 6px;
+  background: transparent; color: var(--text-primary); width: 100%; min-width: 72px;
+  font-variant-numeric: tabular-nums;
+}
+.price-table input.cell-in.model-in { min-width: 150px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 12.5px; }
+.price-table input.cell-in.num-in { text-align: right; min-width: 74px; }
+.price-table input.cell-in.note-in { min-width: 100px; }
+.price-table input.cell-in:hover { border-color: var(--border-primary); background: var(--bg-secondary); }
+.price-table input.cell-in:focus { border-color: var(--accent); background: var(--bg-secondary); outline: none; }
+.price-table tr.dirty { background: var(--accent-soft); }
+
+.unpriced-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.unpriced-item {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 4px 3px 9px; border-radius: 8px;
+  background: var(--bg-secondary); border: 1px solid var(--warn-border);
+  font-size: 12.5px;
+}
+
+.login { max-width: 420px; margin: 56px auto; }
+.toast {
+  position: fixed; right: 16px; bottom: 16px;
+  background: var(--text-primary); color: var(--bg-secondary);
+  padding: 9px 14px; border-radius: 10px; box-shadow: var(--shadow-lg);
+  z-index: 80; display: none; max-width: min(420px, 85vw); font-size: 13.5px;
+}
+.toast.err { background: var(--budget-bad); color: #ffffff; }
+
+.name-cell { display: grid; gap: 1px; }
+.name-cell .name-line { display: inline-flex; align-items: center; gap: 6px; font-weight: 500; }
+.name-cell small { color: var(--text-tertiary); font-size: 12px; }
+.swatch { display: inline-block; width: 9px; height: 9px; border-radius: 3px; flex-shrink: 0; }
+
+@media (max-width: 640px) {
+  .wrap { padding: 14px 12px 44px; }
+  .kpi { padding: 11px 12px; }
+  .kpi-value { font-size: 20px; }
+  .card { padding: 13px; }
+  th, td { padding: 7px 8px; }
+}
 </style>
 </head>
 <body>
@@ -153,34 +394,140 @@ dialog::backdrop { background: rgb(0 0 0 / .35); }
 </div>
 <div class="tip" id="tip"></div>
 <div class="toast" id="toast"></div>
-<dialog id="dlg"><div class="dlg-head"><h3 id="dlg-title"></h3></div><div class="dlg-body" id="dlg-body"></div><div class="dlg-foot" id="dlg-foot"></div></dialog>
+<dialog id="dlg">
+  <div class="dlg-head">
+    <h3 id="dlg-title"></h3>
+    <button class="btn small ghost" type="button" data-close aria-label="关闭">关闭</button>
+  </div>
+  <div class="dlg-body" id="dlg-body"></div>
+  <div class="dlg-foot" id="dlg-foot"></div>
+</dialog>
 
 <script>
 (() => {
 "use strict";
+
 const PLUGIN = "cpa-users";
 const MGMT = `/v0/management/${PLUGIN}/`;
 // Built from pieces: Oh My CPA re-bases literal CPA paths onto its own host, but
 // this link must point at CPA's public address, where users actually are.
 const ME_PATH = ["", "v0", "resource", "plugins", PLUGIN, "me"].join("/");
 const SESSION_KEY = `${PLUGIN}:mgmt-key`;
-// CPA's public address: the configured one, else this page's origin when CPA serves it directly.
-const cpaBase = () => (state.config && state.config.public_base_url) || (document.documentElement.dataset.host === "frame" ? "" : location.origin);
-const meURL = () => (cpaBase() ? cpaBase() + ME_PATH : "");
-const fmt = new Intl.NumberFormat("zh-CN", { notation: "compact", maximumFractionDigits: 1 });
+
+const fmtCompact = new Intl.NumberFormat("zh-CN", { notation: "compact", maximumFractionDigits: 1 });
 const fmtInt = new Intl.NumberFormat("zh-CN");
 const $ = (sel, root = document) => root.querySelector(sel);
-const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-const num = (n) => fmt.format(n || 0);
 
-// ---------- theme: follow the CPAMC parent when embedded ----------
-const THEME_VARS = ["--bg-primary", "--bg-secondary", "--bg-tertiary", "--bg-quinary", "--text-primary", "--text-secondary",
-  "--text-tertiary", "--border-color", "--border-primary", "--primary-color", "--primary-hover", "--primary-contrast",
-  "--success-color", "--error-color", "--warning-bg", "--shadow", "--shadow-lg", "--radius-md"];
+// ---------- safe DOM helpers (never innerHTML with data) ----------
+function h(tag, props, ...children) {
+  const el = document.createElement(tag);
+  let deferredValue;
+  if (props) {
+    if ("type" in props && props.type !== undefined) el.setAttribute("type", String(props.type));
+    for (const [k, v] of Object.entries(props)) {
+      if (k === "type" || v === undefined || v === null || v === false) continue;
+      if (k === "class" || k === "className") el.className = v;
+      else if (k === "style" && typeof v === "object") Object.assign(el.style, v);
+      else if (k === "dataset" && typeof v === "object") {
+        for (const [dk, dv] of Object.entries(v)) {
+          if (dv !== undefined && dv !== null) el.dataset[dk] = String(dv);
+        }
+      } else if (k.startsWith("on") && typeof v === "function") el.addEventListener(k.slice(2).toLowerCase(), v);
+      else if (k === "value" && (tag === "input" || tag === "select" || tag === "textarea")) deferredValue = v;
+      else if (k === "checked" || k === "disabled" || k === "selected" || k === "required" || k === "open") el[k] = Boolean(v);
+      else el.setAttribute(k, v === true ? "" : String(v));
+    }
+  }
+  const append = (c) => {
+    if (c === undefined || c === null || c === false) return;
+    if (Array.isArray(c)) { for (const x of c) append(x); return; }
+    el.appendChild(c instanceof Node ? c : document.createTextNode(String(c)));
+  };
+  append(children);
+  if (deferredValue !== undefined) el.value = String(deferredValue);
+  return el;
+}
+
+const SVG_NS = "http://www.w3.org/2000/svg";
+function setChildren(el, ...nodes) {
+  const flat = [];
+  const push = (c) => {
+    if (c === undefined || c === null || c === false) return;
+    if (Array.isArray(c)) { for (const x of c) push(x); return; }
+    flat.push(c instanceof Node ? c : document.createTextNode(String(c)));
+  };
+  push(nodes);
+  el.replaceChildren(...flat);
+}
+
+function svgEl(tag, attrs, ...children) {
+  const el = document.createElementNS(SVG_NS, tag);
+  if (attrs) {
+    for (const [k, v] of Object.entries(attrs)) {
+      if (v === undefined || v === null || v === false) continue;
+      el.setAttribute(k, String(v));
+    }
+  }
+  const append = (c) => {
+    if (c === undefined || c === null || c === false) return;
+    if (Array.isArray(c)) { for (const x of c) append(x); return; }
+    el.appendChild(c instanceof Node ? c : document.createTextNode(String(c)));
+  };
+  append(children);
+  return el;
+}
+
+// ---------- formatting ----------
+const currencySymbol = () => (state.config && state.config.currency_symbol) || "$";
+const num = (n) => fmtCompact.format(Number(n) || 0);
+
+function fmtMoney(v, sym = currencySymbol()) {
+  const n = Number(v) || 0;
+  if (n === 0) return `${sym}0.00`;
+  const sign = n < 0 ? "-" : "";
+  const abs = Math.abs(n);
+  if (abs >= 1) return `${sign}${sym}${abs.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `${sign}${sym}${abs.toFixed(4)}`;
+}
+
+function fmtCostLimit(limit) {
+  const n = Number(limit) || 0;
+  return n > 0 ? fmtMoney(n) : "—";
+}
+
+function fmtAxisCost(v) {
+  const sym = currencySymbol();
+  if (!v) return `${sym}0`;
+  if (v >= 1000) return `${sym}${fmtCompact.format(v)}`;
+  if (v >= 1) return `${sym}${Number.isInteger(v) ? v : v.toFixed(v < 10 ? 2 : 1)}`;
+  // Ticks are round steps, so three significant digits keep neighbours distinct.
+  return `${sym}${parseFloat(v.toPrecision(3))}`;
+}
+
+function budgetClass(pct) {
+  if (pct > 90) return "bad";
+  if (pct >= 70) return "warn";
+  return "ok";
+}
+
+const cpaBase = () => (state.config && state.config.public_base_url) || (document.documentElement.dataset.host === "frame" ? "" : location.origin);
+const meURL = () => (cpaBase() ? cpaBase() + ME_PATH : "");
+
+// ---------- theme: follow host panel (CPAMC / OMC) + prefers-color-scheme ----------
+const THEME_VARS = [
+  "--bg-primary", "--bg-secondary", "--bg-tertiary", "--bg-quinary",
+  "--text-primary", "--text-secondary", "--text-tertiary",
+  "--border-color", "--border-primary",
+  "--primary-color", "--primary-hover", "--primary-contrast",
+  "--success-color", "--error-color", "--warning-bg",
+  "--shadow", "--shadow-lg", "--radius-md"
+];
+
 function parentDoc() {
   try { if (window.parent !== window && window.parent.document) return window.parent.document; } catch { /* cross-origin */ }
   return null;
 }
+
 function syncTheme() {
   const pdoc = parentDoc();
   const root = document.documentElement;
@@ -194,16 +541,19 @@ function syncTheme() {
     if (val) root.style.setProperty(v, val); else root.style.removeProperty(v);
   }
   const theme = pdoc.documentElement.getAttribute("data-theme");
-  if (theme) root.setAttribute("data-theme", theme); else root.setAttribute("data-theme", "light");
+  root.setAttribute("data-theme", theme || "light");
   if (pdoc.documentElement.lang) root.lang = pdoc.documentElement.lang;
   if (state.loaded && view.tab === "overview") renderChart();
 }
+
 const pdocInit = parentDoc();
 if (pdocInit) {
-  new MutationObserver(syncTheme).observe(pdocInit.documentElement, { attributes: true, attributeFilter: ["data-theme", "class", "style", "lang"] });
+  new MutationObserver(syncTheme).observe(pdocInit.documentElement, {
+    attributes: true, attributeFilter: ["data-theme", "class", "style", "lang"]
+  });
 }
 
-// ---------- management key: reuse CPAMC's remembered login ----------
+// ---------- management key: reuse CPAMC remembered login or session ----------
 function readCpamcKey() {
   try {
     const raw = localStorage.getItem("cli-proxy-auth");
@@ -220,17 +570,26 @@ function readSessionKey() { try { return sessionStorage.getItem(SESSION_KEY) || 
 function writeSessionKey(v) { try { v ? sessionStorage.setItem(SESSION_KEY, v) : sessionStorage.removeItem(SESSION_KEY); } catch { /* ignore */ } }
 let mgmtKey = readSessionKey() || readCpamcKey();
 
-// ---------- api ----------
+// ---------- API client ----------
 class AuthError extends Error {}
-async function api(path, { method = "GET", body, query } = {}) {
+async function api(path, { method = "GET", body, query, timeoutMs } = {}) {
   const url = new URL(MGMT + path, location.origin);
-  if (query) for (const [k, v] of Object.entries(query)) if (v !== undefined && v !== "" && v !== null) url.searchParams.set(k, v);
+  if (query) {
+    for (const [k, v] of Object.entries(query)) {
+      if (v !== undefined && v !== "" && v !== null) url.searchParams.set(k, v);
+    }
+  }
   const res = await fetch(url, {
     method,
+    cache: "no-store",
     // No key means no header at all: Oh My CPA then supplies its stored management key,
     // while an explicit (even empty) credential would be checked and refused.
-    headers: { ...(mgmtKey ? { Authorization: `Bearer ${mgmtKey}` } : {}), ...(body ? { "Content-Type": "application/json" } : {}) },
-    body: body ? JSON.stringify(body) : undefined,
+    headers: {
+      ...(mgmtKey ? { Authorization: `Bearer ${mgmtKey}` } : {}),
+      ...(body !== undefined ? { "Content-Type": "application/json" } : {})
+    },
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+    signal: timeoutMs && typeof AbortSignal !== "undefined" && AbortSignal.timeout ? AbortSignal.timeout(timeoutMs) : undefined,
   });
   let data = {};
   try { data = await res.json(); } catch { /* non-json */ }
@@ -241,9 +600,36 @@ async function api(path, { method = "GET", body, query } = {}) {
 }
 
 // ---------- state ----------
-const state = { loaded: false, groups: [], users: [], keys: [], models: [], config: {}, usage: null, logs: [], error: "" };
-const view = { tab: "overview", days: 7, metric: "tokens", logUser: "", logFailed: false };
-const userColor = new Map(); // user id -> css var, by creation order
+const state = {
+  loaded: false,
+  groups: [],
+  users: [],
+  keys: [],
+  models: [],
+  prices: [],
+  unpriced_models: [],
+  running_total: 0,
+  config: {},
+  usage: null,
+  logs: [],
+  error: "",
+  timezone: "",
+  version: "",
+  liveByUser: new Map(), // id -> { running, max, rpm, rpm_limit, oldest_started_at }
+};
+
+const view = {
+  tab: "overview",
+  days: 7,
+  metric: "cost",
+  sortKey: "day_cost",
+  sortDir: -1, // -1 desc, 1 asc
+  logUser: "",
+  logFailed: false,
+  prefillPriceModel: "",
+};
+
+const userColor = new Map();
 
 function toast(msg, isErr) {
   const t = $("#toast");
@@ -254,15 +640,71 @@ function toast(msg, isErr) {
   toast.timer = setTimeout(() => { t.style.display = "none"; }, isErr ? 5000 : 2400);
 }
 
+async function copyText(text, msg) {
+  try {
+    await navigator.clipboard.writeText(text);
+    toast(msg || "已复制");
+  } catch {
+    prompt("复制下面的内容", text);
+  }
+}
+
+function qOf(u) {
+  const q = (u && u.quota) || {};
+  const live = u ? state.liveByUser.get(u.id) : null;
+  return {
+    day: { tokens: q.day?.tokens || 0, requests: q.day?.requests || 0, cost: Number(q.day?.cost) || 0 },
+    month: { tokens: q.month?.tokens || 0, requests: q.month?.requests || 0, cost: Number(q.month?.cost) || 0 },
+    total_cost: Number(q.total_cost) || 0,
+    running: live ? (live.running || 0) : (q.running || 0),
+    rpm: live ? (live.rpm || 0) : (q.rpm || 0),
+    oldest_started_at: live ? (live.oldest_started_at || 0) : (q.oldest_started_at || 0),
+    day_reset: q.day_reset || 0,
+    month_reset: q.month_reset || 0,
+  };
+}
+
 async function loadState() {
   const s = await api("state");
-  Object.assign(state, { groups: s.groups || [], users: s.users || [], keys: s.keys || [], models: s.models || [],
-    config: s.config || {}, ready: s.ready, error: s.error || "", timezone: s.timezone, version: s.version, loaded: true });
+  const users = s.users || [];
+  const runningSum = users.reduce((a, u) => a + (u.quota?.running || 0), 0);
+  Object.assign(state, {
+    groups: s.groups || [],
+    users,
+    keys: s.keys || [],
+    models: s.models || [],
+    prices: s.prices || [],
+    unpriced_models: s.unpriced_models || [],
+    running_total: typeof s.running_total === "number" ? s.running_total : runningSum,
+    config: s.config || {},
+    ready: s.ready,
+    error: s.error || "",
+    timezone: s.timezone || "",
+    version: s.version || "",
+    loaded: true,
+  });
+  state.liveByUser.clear();
+  for (const u of users) {
+    state.liveByUser.set(u.id, {
+      running: u.quota?.running || 0,
+      max: u.max_concurrency || 0,
+      rpm: u.quota?.rpm || 0,
+      rpm_limit: u.rpm_limit || 0,
+      oldest_started_at: u.quota?.oldest_started_at || 0,
+    });
+  }
   userColor.clear();
   state.users.forEach((u, i) => userColor.set(u.id, i < 7 ? `var(--series-${i + 1})` : "var(--series-other)"));
 }
-async function loadUsage() { state.usage = await api("usage", { query: { days: view.days } }); }
-async function loadLogs() { state.logs = (await api("logs", { query: { limit: 300, user_id: view.logUser, failed: view.logFailed ? "1" : "" } })).logs || []; }
+
+async function loadUsage() {
+  state.usage = await api("usage", { query: { days: view.days } });
+}
+
+async function loadLogs() {
+  const r = await api("logs", { query: { limit: 300, user_id: view.logUser, failed: view.logFailed ? "1" : "" } });
+  state.logs = r.logs || [];
+}
 
 async function refresh() {
   try {
@@ -270,19 +712,141 @@ async function refresh() {
     if (view.tab === "overview") await loadUsage();
     if (view.tab === "logs") await loadLogs();
     render();
+    scheduleLive();
   } catch (e) { handleError(e); }
 }
 
 function handleError(e) {
-  if (e instanceof AuthError) { writeSessionKey(""); mgmtKey = ""; renderLogin(e.message); return; }
+  if (e instanceof AuthError) {
+    stopLive();
+    state.loaded = false;
+    writeSessionKey("");
+    mgmtKey = "";
+    renderLogin(e.message);
+    return;
+  }
   toast(e.message || String(e), true);
 }
+
+// ---------- live polling (every 3s while visible, in-place DOM updates) ----------
+let liveTimer = null;
+let liveInFlight = false;
+
+function stopLive() {
+  if (liveTimer) { clearTimeout(liveTimer); liveTimer = null; }
+}
+
+function scheduleLive(delayMs = 3000) {
+  stopLive();
+  if (!state.loaded || document.visibilityState !== "visible") return;
+  liveTimer = setTimeout(pollLive, delayMs);
+}
+
+async function pollLive() {
+  liveTimer = null;
+  if (!state.loaded || document.visibilityState !== "visible" || liveInFlight) return;
+  liveInFlight = true;
+  try {
+    const data = await api("live", { timeoutMs: 8000 });
+    applyLiveUpdate(data);
+  } catch (e) {
+    if (e instanceof AuthError) { liveInFlight = false; handleError(e); return; }
+    // Silently ignore transient live polling errors to avoid disrupting forms.
+  } finally {
+    liveInFlight = false;
+    scheduleLive(3000);
+  }
+}
+
+function applyLiveUpdate(data) {
+  if (!data || typeof data !== "object") return;
+  const nowSec = data.now || Math.floor(Date.now() / 1000);
+  const runningTotal = typeof data.running_total === "number"
+    ? data.running_total
+    : (data.users || []).reduce((a, x) => a + (x.running || 0), 0);
+  state.running_total = runningTotal;
+
+  let totalRpm = 0;
+  const seen = new Set();
+  for (const lu of (data.users || [])) {
+    seen.add(lu.id);
+    const rec = {
+      running: lu.running || 0,
+      max: lu.max || 0,
+      rpm: lu.rpm || 0,
+      rpm_limit: lu.rpm_limit || 0,
+      oldest_started_at: lu.oldest_started_at || 0,
+    };
+    state.liveByUser.set(lu.id, rec);
+    totalRpm += rec.rpm;
+    const usr = userById(lu.id);
+    if (usr && usr.quota) {
+      usr.quota.running = rec.running;
+      usr.quota.rpm = rec.rpm;
+    }
+    updateLiveUserCells(lu.id, rec, nowSec);
+  }
+  // Reset any users not reported in live payload
+  for (const usr of state.users) {
+    if (!seen.has(usr.id)) {
+      const rec = { running: 0, max: usr.max_concurrency || 0, rpm: 0, rpm_limit: usr.rpm_limit || 0, oldest_started_at: 0 };
+      state.liveByUser.set(usr.id, rec);
+      if (usr.quota) { usr.quota.running = 0; usr.quota.rpm = 0; }
+      updateLiveUserCells(usr.id, rec, nowSec);
+    }
+  }
+
+  // Update KPI card in place
+  const kpiRun = document.querySelector('[data-live="running-total"]');
+  if (kpiRun) kpiRun.textContent = fmtInt.format(runningTotal);
+  const kpiDot = document.querySelector('[data-live="running-dot"]');
+  if (kpiDot) kpiDot.className = "live-dot" + (runningTotal > 0 ? " active" : "");
+  const kpiRpm = document.querySelector('[data-live="rpm-total"]');
+  if (kpiRpm) kpiRpm.textContent = `近 1 分钟 ${fmtInt.format(totalRpm)} 次请求`;
+}
+
+function updateLiveUserCells(uid, rec, nowSec) {
+  const ccEl = document.querySelector(`[data-live-cc="${uid}"]`);
+  if (ccEl) {
+    const dot = ccEl.querySelector(".live-dot");
+    const numEl = ccEl.querySelector(".running-num");
+    const maxEl = ccEl.querySelector(".running-max");
+    if (dot) dot.className = "live-dot" + (rec.running > 0 ? " active" : "");
+    if (numEl) {
+      numEl.textContent = String(rec.running);
+      numEl.className = "running-num" + (rec.running > 0 ? " active" : "");
+    }
+    if (maxEl) maxEl.textContent = `/ ${rec.max > 0 ? rec.max : "—"}`;
+    if (rec.running > 0 && rec.oldest_started_at > 0) {
+      const sec = Math.max(0, Math.round(nowSec - rec.oldest_started_at));
+      ccEl.title = `最早进行中请求已持续 ${sec} 秒`;
+    } else {
+      ccEl.removeAttribute("title");
+    }
+  }
+  const rpmEl = document.querySelector(`[data-live-rpm="${uid}"]`);
+  if (rpmEl) {
+    rpmEl.replaceChildren(
+      h("span", { class: rec.rpm > 0 ? "running-num" : "muted" }, fmtInt.format(rec.rpm)),
+      h("span", { class: "faint" }, ` / ${rec.rpm_limit > 0 ? fmtInt.format(rec.rpm_limit) : "—"}`)
+    );
+  }
+}
+
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible" && state.loaded) {
+    pollLive();
+  } else {
+    stopLive();
+  }
+});
 
 // ---------- helpers ----------
 const userById = (id) => state.users.find((u) => u.id === id);
 const groupById = (id) => state.groups.find((g) => g.id === id);
 const keyById = (id) => state.keys.find((k) => k.id === id);
-const userLabel = (id) => id === 0 ? "原生 Key / 其他" : (userById(id)?.name ?? `已删除用户 #${id}`);
+const userLabel = (id) => (id === 0 ? "原生 Key / 其他" : (userById(id)?.name ?? `已删除用户 #${id}`));
+
 function when(ts) {
   if (!ts) return "—";
   const d = new Date(ts * 1000);
@@ -292,152 +856,453 @@ function when(ts) {
   if (diff < 86400) return `${Math.floor(diff / 3600)} 小时前`;
   return d.toLocaleDateString("zh-CN");
 }
-function userStatus(u) {
-  if (u.disabled) return `<span class="status off">已停用</span>`;
-  if (u.expires_at && u.expires_at * 1000 <= Date.now()) return `<span class="status bad">已过期</span>`;
-  return `<span class="status">正常</span>`;
-}
-function meter(used, limit, unit) {
-  if (!limit) return `<div class="meter"><small>${num(used)}${unit} · 不限</small></div>`;
-  const pct = Math.min(100, (used / limit) * 100);
-  return `<div class="meter"><small>${num(used)} / ${num(limit)}${unit}</small><div class="bar"><span class="${pct >= 90 ? "hot" : ""}" style="width:${pct.toFixed(1)}%"></span></div></div>`;
-}
-function modelChips(list, max = 4) {
-  if (!list || !list.length) return `<span class="faint">无</span>`;
-  const shown = list.slice(0, max).map((m) => `<span class="chip">${esc(m)}</span>`).join("");
-  return shown + (list.length > max ? `<span class="faint">+${list.length - max}</span>` : "");
+
+function expiryLabel(u) {
+  if (!u.expires_at) return "永久";
+  const d = new Date(u.expires_at * 1000 - 1);
+  return d.toLocaleDateString("zh-CN");
 }
 
-// ---------- layout ----------
+function statusBadge(u) {
+  if (u.disabled) return h("span", { class: "status off" }, "已停用");
+  if (u.expires_at && u.expires_at * 1000 <= Date.now()) return h("span", { class: "status bad" }, "已过期");
+  return h("span", { class: "status" }, "正常");
+}
+
+function costMeter(spent, limit, subText) {
+  const s = Number(spent) || 0;
+  const lim = Number(limit) || 0;
+  const nodes = [
+    h("div", { class: "meter-top" },
+      h("span", { class: "meter-spent" }, fmtMoney(s)),
+      h("span", { class: "meter-limit" }, `/ ${lim > 0 ? fmtMoney(lim) : "—"}`)
+    )
+  ];
+  if (lim > 0) {
+    const pct = Math.min(100, (s / lim) * 100);
+    nodes.push(h("div", { class: "bar" },
+      h("span", { class: budgetClass(pct), style: { width: `${pct.toFixed(1)}%` } })
+    ));
+  }
+  if (subText) nodes.push(h("div", { class: "meter-sub" }, subText));
+  return h("div", { class: "meter" }, nodes);
+}
+
+function modelChipsEl(list, max = 4) {
+  if (!list || !list.length) return h("span", { class: "faint" }, "无");
+  const frag = document.createDocumentFragment();
+  list.slice(0, max).forEach((m) => frag.appendChild(h("span", { class: "chip" }, m)));
+  if (list.length > max) frag.appendChild(h("span", { class: "faint" }, `+${list.length - max}`));
+  return frag;
+}
+
+function dateInputValue(ts) {
+  if (!ts) return "";
+  const d = new Date(ts * 1000 - 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function limitSummary(u) {
+  const parts = [];
+  if (u.daily_cost_limit > 0) parts.push(`日 ${fmtMoney(u.daily_cost_limit)}`);
+  if (u.monthly_cost_limit > 0) parts.push(`月 ${fmtMoney(u.monthly_cost_limit)}`);
+  if (u.total_cost_limit > 0) parts.push(`累计 ${fmtMoney(u.total_cost_limit)}`);
+  if (u.max_concurrency > 0) parts.push(`并发 ${u.max_concurrency}`);
+  if (u.rpm_limit > 0) parts.push(`RPM ${u.rpm_limit}`);
+  if (u.daily_tokens > 0) parts.push(`日 ${num(u.daily_tokens)} Token`);
+  if (u.monthly_tokens > 0) parts.push(`月 ${num(u.monthly_tokens)} Token`);
+  if (u.daily_requests > 0) parts.push(`日 ${num(u.daily_requests)} 次`);
+  if (u.monthly_requests > 0) parts.push(`月 ${num(u.monthly_requests)} 次`);
+  return parts.length ? h("span", { class: "muted", style: { fontSize: "12.5px" } }, parts.join(" · ")) : h("span", { class: "faint" }, "不限");
+}
+
+// ---------- main layout ----------
 function render() {
   const app = $("#app");
-  const tabs = [["overview", "概览"], ["users", "用户"], ["groups", "模型分组"], ["logs", "请求记录"]];
-  app.innerHTML = `
-    <header class="top">
-      <h1>用户分发</h1><span class="faint">v${esc(state.version || "")}</span>
-      <span class="spacer"></span>
-      <button class="btn" id="copy-me" title="${esc(meURL() || "先在插件设置里填写 public_base_url")}">复制自助查询链接</button>
-      <button class="btn" id="reload">刷新</button>
-    </header>
-    ${state.error ? `<div class="notice">插件存储不可用：${esc(state.error)}</div>` : ""}
-    <nav class="tabs" role="tablist">${tabs.map(([id, label]) => `<button class="tab" role="tab" data-tab="${id}" aria-selected="${view.tab === id}">${label}</button>`).join("")}</nav>
-    <main id="main"></main>`;
-  app.querySelectorAll("[data-tab]").forEach((b) => b.addEventListener("click", async () => {
-    view.tab = b.dataset.tab;
-    try {
-      if (view.tab === "overview") await loadUsage();
-      if (view.tab === "logs") await loadLogs();
-    } catch (e) { handleError(e); return; }
-    render();
-  }));
-  $("#reload").addEventListener("click", refresh);
-  $("#copy-me").addEventListener("click", () => {
-    if (!meURL()) { toast("先在插件设置里填写 public_base_url（用户访问 CPA 的地址）", true); return; }
-    copy(meURL(), "自助查询链接已复制，发给用户即可");
-  });
-  ({ overview: renderOverview, users: renderUsers, groups: renderGroups, logs: renderLogs })[view.tab]();
+  const unpricedCount = (state.unpriced_models || []).length;
+  const tabs = [
+    ["overview", "概览"],
+    ["users", "用户"],
+    ["groups", "模型分组"],
+    ["prices", "价格", unpricedCount],
+    ["logs", "请求记录"],
+  ];
+
+  const header = h("header", { class: "top" },
+    h("h1", null, "用户分发"),
+    state.version ? h("span", { class: "ver" }, `v${state.version}`) : null,
+    unpricedCount > 0 ? h("button", {
+      class: "warn-pill",
+      type: "button",
+      title: "点击前往「价格」页配置未定价模型",
+      onClick: () => switchTab("prices")
+    }, h("span", { class: "warn-dot" }), `${unpricedCount} 个模型未设置价格`) : null,
+    h("span", { class: "spacer" }),
+    h("button", {
+      class: "btn",
+      type: "button",
+      title: meURL() || "先在插件设置里填写 public_base_url",
+      onClick: () => {
+        if (!meURL()) { toast("先在插件设置里填写 public_base_url（用户访问 CPA 的地址）", true); return; }
+        copyText(meURL(), "自助查询链接已复制，发给用户即可");
+      }
+    }, "复制自助查询链接"),
+    h("button", { class: "btn", type: "button", onClick: refresh }, "刷新")
+  );
+
+  const nav = h("nav", { class: "tabs", role: "tablist" },
+    tabs.map(([id, label, badge]) =>
+      h("button", {
+        class: "tab",
+        role: "tab",
+        type: "button",
+        "aria-selected": String(view.tab === id),
+        onClick: () => switchTab(id)
+      },
+        label,
+        badge > 0 ? h("span", { class: "tab-badge" }, String(badge)) : null
+      )
+    )
+  );
+
+  const main = h("main", { id: "main" });
+  setChildren(app,
+    header,
+    state.error ? h("div", { class: "notice" }, `插件存储不可用：${state.error}`) : null,
+    nav,
+    main
+  );
+
+  ({
+    overview: renderOverview,
+    users: renderUsers,
+    groups: renderGroups,
+    prices: renderPrices,
+    logs: renderLogs,
+  })[view.tab]();
 }
 
-async function copy(text, msg) {
-  try { await navigator.clipboard.writeText(text); toast(msg || "已复制"); }
-  catch { prompt("复制下面的内容", text); }
+async function switchTab(tabId) {
+  view.tab = tabId;
+  try {
+    if (tabId === "overview") await loadUsage();
+    if (tabId === "logs") await loadLogs();
+  } catch (e) { handleError(e); return; }
+  render();
 }
 
-// ---------- overview ----------
+// ---------- tab 1: overview ----------
 function renderOverview() {
   const main = $("#main");
-  const u = state.usage || { totals: {}, by_user: {}, by_model: {}, days: [] };
-  const today = state.users.reduce((a, x) => ({ t: a.t + x.quota.day.tokens, r: a.r + x.quota.day.requests }), { t: 0, r: 0 });
-  const month = state.users.reduce((a, x) => a + x.quota.month.tokens, 0);
-  const active = state.users.filter((x) => x.quota.day.requests > 0).length;
-  const running = state.users.reduce((a, x) => a + x.quota.running, 0);
-  main.innerHTML = `
-    <div class="kpis">
-      <div class="kpi"><div class="label">今日请求</div><div class="value">${fmtInt.format(today.r)}</div><div class="sub">进行中 ${running}</div></div>
-      <div class="kpi"><div class="label">今日 Token</div><div class="value">${num(today.t)}</div><div class="sub">插件用户合计</div></div>
-      <div class="kpi"><div class="label">本月 Token</div><div class="value">${num(month)}</div><div class="sub">时区 ${esc(state.timezone || "")}</div></div>
-      <div class="kpi"><div class="label">用户</div><div class="value">${active}<span class="faint" style="font-size:16px"> / ${state.users.length}</span></div><div class="sub">今日活跃 / 全部</div></div>
-    </div>
-    <section class="card">
-      <h2>每日用量
-        <span class="spacer"></span>
-        <span class="seg" id="metric">${[["tokens", "Token"], ["requests", "请求"]].map(([k, l]) => `<button data-v="${k}" aria-pressed="${view.metric === k}">${l}</button>`).join("")}</span>
-        <span class="seg" id="range">${[7, 14, 30].map((d) => `<button data-v="${d}" aria-pressed="${view.days === d}">${d} 天</button>`).join("")}</span>
-      </h2>
-      <div class="legend" id="legend"></div>
-      <div class="chart" id="chart"></div>
-    </section>
-    <section class="card">
-      <h2>用户额度与用量 <span class="faint" style="font-weight:400;font-size:13px">区间 = 最近 ${view.days} 天</span></h2>
-      <div class="table-scroll">${usersUsageTable(u)}</div>
-    </section>
-    <section class="card">
-      <h2>按模型（最近 ${view.days} 天）</h2>
-      <div class="table-scroll">${modelTable(u)}</div>
-    </section>`;
-  $("#metric").addEventListener("click", (e) => { const v = e.target.dataset.v; if (v) { view.metric = v; renderOverview(); } });
-  $("#range").addEventListener("click", async (e) => {
-    const v = Number(e.target.dataset.v);
-    if (!v) return;
-    view.days = v;
-    try { await loadUsage(); } catch (err) { handleError(err); return; }
-    renderOverview();
-  });
+  const u = state.usage || { totals: {}, by_user: {}, by_model: {}, days: [], user_daily: {} };
+
+  let todayCost = 0, monthCost = 0, totalCostAll = 0;
+  let todayTokens = 0, monthTokens = 0, todayReq = 0, activeUsers = 0, totalRpm = 0;
+  for (const usr of state.users) {
+    const q = qOf(usr);
+    todayCost += q.day.cost;
+    monthCost += q.month.cost;
+    totalCostAll += q.total_cost;
+    todayTokens += q.day.tokens;
+    monthTokens += q.month.tokens;
+    todayReq += q.day.requests;
+    totalRpm += q.rpm;
+    if (q.day.requests > 0) activeUsers++;
+  }
+  const runningTotal = state.running_total;
+
+  const kpis = h("div", { class: "kpis" },
+    h("div", { class: "kpi" },
+      h("div", { class: "kpi-label" }, "今日金额"),
+      h("div", { class: "kpi-value" }, fmtMoney(todayCost)),
+      h("div", { class: "kpi-sub" }, `今日 ${num(todayTokens)} Token`)
+    ),
+    h("div", { class: "kpi" },
+      h("div", { class: "kpi-label" }, "本月金额"),
+      h("div", { class: "kpi-value" }, fmtMoney(monthCost)),
+      h("div", { class: "kpi-sub" }, `本月 ${num(monthTokens)} Token${state.timezone ? " · " + state.timezone : ""}`)
+    ),
+    h("div", { class: "kpi" },
+      h("div", { class: "kpi-label" },
+        h("span", { class: "live-dot" + (runningTotal > 0 ? " active" : ""), dataset: { live: "running-dot" } }),
+        "当前并发"
+      ),
+      h("div", { class: "kpi-value" },
+        h("span", { dataset: { live: "running-total" } }, fmtInt.format(runningTotal))
+      ),
+      h("div", { class: "kpi-sub", dataset: { live: "rpm-total" } }, `近 1 分钟 ${fmtInt.format(totalRpm)} 次请求`)
+    ),
+    h("div", { class: "kpi" },
+      h("div", { class: "kpi-label" }, "今日请求"),
+      h("div", { class: "kpi-value" }, fmtInt.format(todayReq)),
+      h("div", { class: "kpi-sub" }, `历史累计 ${fmtMoney(totalCostAll)}`)
+    ),
+    h("div", { class: "kpi" },
+      h("div", { class: "kpi-label" }, "活跃用户"),
+      h("div", { class: "kpi-value" },
+        String(activeUsers),
+        h("span", { class: "denom" }, `/ ${state.users.length}`)
+      ),
+      h("div", { class: "kpi-sub" }, "今日活跃 / 全部用户")
+    )
+  );
+
+  // Spend chart card
+  const metricSeg = h("span", { class: "seg" },
+    [["cost", "金额"], ["tokens", "Token"], ["requests", "请求"]].map(([k, label]) =>
+      h("button", {
+        type: "button",
+        "aria-pressed": String(view.metric === k),
+        onClick: () => { view.metric = k; renderOverview(); }
+      }, label)
+    )
+  );
+  const rangeSeg = h("span", { class: "seg" },
+    [7, 14, 30].map((d) =>
+      h("button", {
+        type: "button",
+        "aria-pressed": String(view.days === d),
+        onClick: async () => {
+          view.days = d;
+          try { await loadUsage(); } catch (err) { handleError(err); return; }
+          renderOverview();
+        }
+      }, `${d} 天`)
+    )
+  );
+
+  const chartCard = h("section", { class: "card" },
+    h("div", { class: "card-head" },
+      h("h2", null, view.metric === "cost" ? "每日消费" : "每日用量"),
+      h("span", { class: "card-sub" }, `最近 ${view.days} 天`),
+      h("span", { class: "spacer" }),
+      metricSeg,
+      rangeSeg
+    ),
+    h("div", { class: "legend", id: "legend" }),
+    h("div", { class: "chart", id: "chart" })
+  );
+
+  // Per-user spend & live concurrency table
+  const userCard = h("section", { class: "card" },
+    h("div", { class: "card-head" },
+      h("h2", null, "用户消费与实时并发"),
+      h("span", { class: "card-sub" }, "默认按今日金额降序 · 并发与 RPM 每 3 秒自动更新"),
+      h("span", { class: "spacer" }),
+      h("button", { class: "btn small", type: "button", onClick: () => openUserDialog(null) }, "新建用户")
+    ),
+    h("div", { class: "table-scroll" }, buildOverviewUsersTable(u))
+  );
+
+  // By model card
+  const modelCard = h("section", { class: "card" },
+    h("div", { class: "card-head" },
+      h("h2", null, `按模型统计（最近 ${view.days} 天）`)
+    ),
+    h("div", { class: "table-scroll" }, buildModelTable(u))
+  );
+
+  main.replaceChildren(kpis, chartCard, userCard, modelCard);
   renderChart();
 }
 
-function usersUsageTable(u) {
-  const ids = new Set(state.users.map((x) => x.id));
-  Object.keys(u.by_user || {}).forEach((k) => ids.add(Number(k)));
-  if (!ids.size) return `<div class="empty">还没有用户。去「用户」页新建一个。</div>`;
-  const rows = [...ids].map((id) => {
-    const usr = userById(id);
-    const r = (u.by_user || {})[id] || {};
-    const color = usr ? userColor.get(id) : "var(--series-other)";
-    if (!usr) {
-      return `<tr><td><span class="swatch" style="background:${color}"></span>${esc(userLabel(id))}</td><td colspan="4" class="faint">不受插件管理</td>
-        <td class="num">${num(r.total_tokens)}</td><td class="num">${fmtInt.format(r.requests || 0)}</td><td class="num">${fmtInt.format(r.failed || 0)}</td><td>—</td></tr>`;
+function buildOverviewUsersTable(u) {
+  if (!state.users.length) {
+    return h("div", { class: "empty" },
+      h("div", null, "还没有用户，先新建一个"),
+      h("button", { class: "btn primary", type: "button", onClick: () => openUserDialog(null) }, "新建用户")
+    );
+  }
+
+  const sortBy = (key) => {
+    if (view.sortKey === key) view.sortDir = -view.sortDir;
+    else { view.sortKey = key; view.sortDir = -1; }
+    renderOverview();
+  };
+
+  const sortHeader = (label, key, alignNum = false) => {
+    const active = view.sortKey === key;
+    return h("th", {
+      class: (alignNum ? "num " : "") + "sortable",
+      onClick: () => sortBy(key)
+    },
+      label,
+      active ? h("span", { class: "sort-ind" }, view.sortDir < 0 ? "↓" : "↑") : null
+    );
+  };
+
+  const sorted = [...state.users].sort((a, b) => {
+    const qa = qOf(a), qb = qOf(b);
+    let diff = 0;
+    switch (view.sortKey) {
+      case "running": diff = qa.running - qb.running; break;
+      case "rpm": diff = qa.rpm - qb.rpm; break;
+      case "month_cost": diff = qa.month.cost - qb.month.cost; break;
+      case "total_cost": diff = qa.total_cost - qb.total_cost; break;
+      case "day_cost":
+      default: diff = qa.day.cost - qb.day.cost; break;
     }
-    const q = usr.quota;
-    const lastUsed = Math.max(0, ...state.keys.filter((k) => k.user_id === id).map((k) => k.last_used_at));
-    return `<tr>
-      <td><div class="name-cell"><span><span class="swatch" style="background:${color}"></span>${esc(usr.name)}</span><small>${esc(groupById(usr.group_id)?.name || "无分组")}</small></div></td>
-      <td>${meter(q.day.tokens, usr.daily_tokens, " Token")}${usr.daily_requests ? meter(q.day.requests, usr.daily_requests, " 次") : ""}</td>
-      <td>${meter(q.month.tokens, usr.monthly_tokens, " Token")}${usr.monthly_requests ? meter(q.month.requests, usr.monthly_requests, " 次") : ""}</td>
-      <td class="num nowrap">${q.running}${usr.max_concurrency ? ` / ${usr.max_concurrency}` : ""}</td>
-      <td>${userStatus(usr)}</td>
-      <td class="num">${num(r.total_tokens)}</td>
-      <td class="num">${fmtInt.format(r.requests || 0)}</td>
-      <td class="num">${fmtInt.format(r.failed || 0)}</td>
-      <td class="nowrap">${when(lastUsed)}</td></tr>`;
+    if (diff !== 0) return diff * view.sortDir;
+    if (qb.day.cost !== qa.day.cost) return qb.day.cost - qa.day.cost;
+    if (qb.month.cost !== qa.month.cost) return qb.month.cost - qa.month.cost;
+    return a.name.localeCompare(b.name, "zh-CN");
   });
-  return `<table><thead><tr><th>用户</th><th>今日</th><th>本月</th><th class="num">并发</th><th>状态</th><th class="num">区间 Token</th><th class="num">区间请求</th><th class="num">失败</th><th>最近使用</th></tr></thead><tbody>${rows.join("")}</tbody></table>`;
+
+  const nowSec = Math.floor(Date.now() / 1000);
+  const rows = sorted.map((usr) => {
+    const q = qOf(usr);
+    const color = userColor.get(usr.id) || "var(--series-other)";
+    const grpName = groupById(usr.group_id)?.name || "无分组";
+
+    const ccCell = h("span", {
+      class: "live-cell",
+      dataset: { liveCc: usr.id },
+      title: q.running > 0 && q.oldest_started_at > 0 ? `最早进行中请求已持续 ${Math.max(0, Math.round(nowSec - q.oldest_started_at))} 秒` : undefined
+    },
+      h("span", { class: "live-dot" + (q.running > 0 ? " active" : "") }),
+      h("span", { class: "running-num" + (q.running > 0 ? " active" : "") }, String(q.running)),
+      h("span", { class: "faint running-max" }, `/ ${usr.max_concurrency > 0 ? usr.max_concurrency : "—"}`)
+    );
+
+    const rpmCell = h("span", { class: "nowrap", dataset: { liveRpm: usr.id } },
+      h("span", { class: q.rpm > 0 ? "running-num" : "muted" }, fmtInt.format(q.rpm)),
+      h("span", { class: "faint" }, ` / ${usr.rpm_limit > 0 ? fmtInt.format(usr.rpm_limit) : "—"}`)
+    );
+
+    const totalCell = usr.total_cost_limit > 0
+      ? costMeter(q.total_cost, usr.total_cost_limit)
+      : h("span", { class: "tnum", style: { fontWeight: "500" } }, fmtMoney(q.total_cost));
+
+    return h("tr", null,
+      h("td", null,
+        h("div", { class: "name-cell" },
+          h("span", { class: "name-line" },
+            h("span", { class: "swatch", style: { background: color } }),
+            usr.name
+          ),
+          h("small", null, usr.note ? `${grpName} · ${usr.note}` : grpName)
+        )
+      ),
+      h("td", { class: "num" }, ccCell),
+      h("td", { class: "num" }, rpmCell),
+      h("td", null, costMeter(q.day.cost, usr.daily_cost_limit, `${num(q.day.tokens)} Token · ${fmtInt.format(q.day.requests)} 次`)),
+      h("td", null, costMeter(q.month.cost, usr.monthly_cost_limit, `${num(q.month.tokens)} Token · ${fmtInt.format(q.month.requests)} 次`)),
+      h("td", { class: usr.total_cost_limit > 0 ? "" : "num nowrap" }, totalCell),
+      h("td", { class: "nowrap muted", style: { fontSize: "13px" } }, expiryLabel(usr)),
+      h("td", { class: "nowrap" }, statusBadge(usr))
+    );
+  });
+
+  // Include native-key traffic footnote row if present in usage report
+  const nativeUsage = (u.by_user || {})["0"];
+  if (nativeUsage && (nativeUsage.requests > 0 || nativeUsage.total_tokens > 0 || nativeUsage.cost > 0)) {
+    rows.push(h("tr", { style: { opacity: "0.8" } },
+      h("td", null,
+        h("div", { class: "name-cell" },
+          h("span", { class: "name-line" },
+            h("span", { class: "swatch", style: { background: "var(--series-other)" } }),
+            "原生 Key / 其他"
+          ),
+          h("small", null, `不受插件限制 · 最近 ${view.days} 天`)
+        )
+      ),
+      h("td", { class: "num faint" }, "—"),
+      h("td", { class: "num faint" }, "—"),
+      h("td", { class: "faint", colspan: "2" },
+        `近 ${view.days} 天 ${fmtMoney(nativeUsage.cost || 0)} · ${num(nativeUsage.total_tokens)} Token · ${fmtInt.format(nativeUsage.requests || 0)} 次`
+      ),
+      h("td", { class: "num faint" }, "—"),
+      h("td", { class: "faint" }, "—"),
+      h("td", { class: "faint" }, "原生")
+    ));
+  }
+
+  return h("table", null,
+    h("thead", null,
+      h("tr", null,
+        h("th", null, "名称"),
+        sortHeader("当前并发", "running", true),
+        sortHeader("RPM", "rpm", true),
+        sortHeader("今日金额 / 日限额", "day_cost", false),
+        sortHeader("本月金额 / 月限额", "month_cost", false),
+        sortHeader("累计金额", "total_cost", true),
+        h("th", null, "到期"),
+        h("th", null, "状态")
+      )
+    ),
+    h("tbody", null, rows)
+  );
 }
 
-function modelTable(u) {
-  const entries = Object.entries(u.by_model || {}).sort((a, b) => b[1].total_tokens - a[1].total_tokens);
-  if (!entries.length) return `<div class="empty">这个时间段还没有请求。</div>`;
-  return `<table><thead><tr><th>模型</th><th class="num">请求</th><th class="num">失败</th><th class="num">输入</th><th class="num">输出</th><th class="num">合计 Token</th></tr></thead><tbody>
-    ${entries.map(([m, r]) => `<tr><td class="mono">${esc(m)}</td><td class="num">${fmtInt.format(r.requests)}</td><td class="num">${fmtInt.format(r.failed)}</td>
-      <td class="num">${num(r.input_tokens)}</td><td class="num">${num(r.output_tokens)}</td><td class="num">${num(r.total_tokens)}</td></tr>`).join("")}
-  </tbody></table>`;
+function buildModelTable(u) {
+  const entries = Object.entries(u.by_model || {}).sort((a, b) => {
+    const cd = (Number(b[1].cost) || 0) - (Number(a[1].cost) || 0);
+    return cd !== 0 ? cd : (b[1].total_tokens || 0) - (a[1].total_tokens || 0);
+  });
+  if (!entries.length) return h("div", { class: "empty" }, "这个时间段还没有请求记录。");
+  const unpricedSet = new Set((state.unpriced_models || []).map((m) => m.toLowerCase()));
+
+  return h("table", null,
+    h("thead", null,
+      h("tr", null,
+        h("th", null, "模型"),
+        h("th", { class: "num" }, "金额"),
+        h("th", { class: "num" }, "请求"),
+        h("th", { class: "num" }, "失败"),
+        h("th", { class: "num" }, "输入"),
+        h("th", { class: "num" }, "缓存"),
+        h("th", { class: "num" }, "输出"),
+        h("th", { class: "num" }, "合计 Token")
+      )
+    ),
+    h("tbody", null,
+      entries.map(([m, r]) => {
+        const isUnpriced = unpricedSet.has(m.toLowerCase());
+        return h("tr", null,
+          h("td", { class: "mono" },
+            m,
+            isUnpriced ? h("button", {
+              class: "chip warn",
+              type: "button",
+              style: { marginLeft: "6px", cursor: "pointer" },
+              title: "点击为该模型设置价格",
+              onClick: () => { view.prefillPriceModel = m; switchTab("prices"); }
+            }, "未定价") : null
+          ),
+          h("td", { class: "num", style: { fontWeight: "500" } }, fmtMoney(r.cost || 0)),
+          h("td", { class: "num" }, fmtInt.format(r.requests || 0)),
+          h("td", { class: "num" }, fmtInt.format(r.failed || 0)),
+          h("td", { class: "num" }, num(r.input_tokens)),
+          h("td", { class: "num" }, num(r.cached_tokens)),
+          h("td", { class: "num" }, num(r.output_tokens)),
+          h("td", { class: "num" }, num(r.total_tokens))
+        );
+      })
+    )
+  );
 }
 
-// Stacked daily bars, one segment per user. Colours follow the user (creation
-// order), never their rank; users past the 7th and native-key traffic fold into a
-// neutral "其他" series.
+// ---------- stacked daily chart (inline SVG via svgEl) ----------
 function renderChart() {
   const host = $("#chart");
   const legend = $("#legend");
   if (!host || !state.usage) return;
   const u = state.usage;
-  const metricKey = view.metric === "tokens" ? "total_tokens" : "requests";
+  const days = u.days || [];
+  if (!days.length) {
+    legend.replaceChildren();
+    host.replaceChildren(h("div", { class: "empty" }, "暂无数据。"));
+    return;
+  }
+
+  const metricKey = view.metric === "cost" ? "cost" : (view.metric === "tokens" ? "total_tokens" : "requests");
   const series = [];
-  const other = { id: "other", label: "其他", color: "var(--series-other)", values: u.days.map(() => 0) };
+  const other = { id: "other", label: "其他", color: "var(--series-other)", values: days.map(() => 0) };
+
   for (const [uid, daily] of Object.entries(u.user_daily || {})) {
     const id = Number(uid);
-    const vals = daily.map((d) => d[metricKey] || 0);
-    if (!vals.some(Boolean)) continue;
+    const vals = days.map((_, i) => Number((daily[i] && daily[i][metricKey]) || 0));
+    if (!vals.some((v) => v > 0)) continue;
     const usr = userById(id);
     const color = usr ? userColor.get(id) : null;
     if (!usr || color === "var(--series-other)") {
@@ -448,356 +1313,1159 @@ function renderChart() {
     series.push({ id, label: usr.name, color, values: vals, order: state.users.indexOf(usr) });
   }
   series.sort((a, b) => a.order - b.order);
-  if (other.values.some(Boolean)) series.push(other);
+  if (other.values.some((v) => v > 0)) series.push(other);
 
-  legend.innerHTML = series.length > 1 ? series.map((s) => `<span><i style="background:${s.color}"></i>${esc(s.label)}</span>`).join("") : "";
-  const totals = u.days.map((_, i) => series.reduce((a, s) => a + s.values[i], 0));
+  // Fallback to u.daily if user_daily is empty
+  if (!series.length && Array.isArray(u.daily) && u.daily.some((d) => Number(d[metricKey] || 0) > 0)) {
+    series.push({
+      id: "all",
+      label: "合计",
+      color: "var(--series-1)",
+      values: days.map((_, i) => Number((u.daily[i] && u.daily[i][metricKey]) || 0))
+    });
+  }
+
+  if (series.length > 1) {
+    legend.replaceChildren(...series.map((s) =>
+      h("span", { class: "legend-item" },
+        h("i", { class: "legend-swatch", style: { background: s.color } }),
+        s.label
+      )
+    ));
+  } else {
+    legend.replaceChildren();
+  }
+
+  const totals = days.map((_, i) => series.reduce((a, s) => a + s.values[i], 0));
   const max = Math.max(...totals, 0);
-  if (!max) { host.innerHTML = `<div class="empty">这个时间段还没有用量。</div>`; return; }
+  if (!max) {
+    const hasRequests = (u.totals && (u.totals.requests > 0 || u.totals.total_tokens > 0));
+    host.replaceChildren(h("div", { class: "empty" },
+      view.metric === "cost" && hasRequests
+        ? "这个时间段消费金额为 0，可到「价格」页配置模型单价后重算历史。"
+        : "这个时间段还没有用量。"
+    ));
+    return;
+  }
 
-  const W = Math.max(host.clientWidth, 320), H = 240, padL = 44, padR = 8, padT = 8, padB = 24;
+  const W = Math.max(host.clientWidth || 0, 300);
+  const H = 230, padL = 56, padR = 10, padT = 10, padB = 24;
   const plotW = W - padL - padR, plotH = H - padT - padB;
   const step = niceStep(max / 4);
-  const top = Math.ceil(max / step) * step;
-  const n = u.days.length;
+  const tickCount = Math.max(1, Math.ceil(max / step));
+  const top = tickCount * step;
+  const n = days.length;
   const slot = plotW / n;
-  const bw = Math.max(4, Math.min(36, slot * 0.62));
+  const bw = Math.max(4, Math.min(34, slot * 0.6));
   const y = (v) => padT + plotH - (v / top) * plotH;
-  let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="每日用量">`;
-  for (let v = 0; v <= top + 1e-9; v += step) {
-    svg += `<line class="grid" x1="${padL}" x2="${W - padR}" y1="${y(v)}" y2="${y(v)}"/>`;
-    svg += `<text class="axis" x="${padL - 6}" y="${y(v) + 4}" text-anchor="end">${num(v)}</text>`;
+
+  const svg = svgEl("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": view.metric === "cost" ? "每日消费" : "每日用量" });
+
+  for (let t = 0; t <= tickCount; t++) {
+    const v = t * step;
+    const yPos = y(v);
+    svg.appendChild(svgEl("line", { class: "grid", x1: padL, x2: W - padR, y1: yPos, y2: yPos }));
+    svg.appendChild(svgEl("text", { class: "axis", x: padL - 7, y: yPos + 4, "text-anchor": "end" },
+      view.metric === "cost" ? fmtAxisCost(v) : num(v)
+    ));
   }
-  const labelEvery = Math.ceil(n / Math.max(1, Math.floor(plotW / 54)));
-  u.days.forEach((d, i) => {
+
+  const labelEvery = Math.ceil(n / Math.max(1, Math.floor(plotW / 56)));
+  days.forEach((d, i) => {
     const cx = padL + slot * i + slot / 2;
-    if (i % labelEvery === 0 || i === n - 1) svg += `<text class="axis" x="${cx}" y="${H - 6}" text-anchor="middle">${d.slice(5)}</text>`;
+    const isLast = i === n - 1;
+    const showTick = isLast || (i % labelEvery === 0 && (n - 1 - i) >= Math.ceil(labelEvery * 0.6));
+    if (showTick) {
+      svg.appendChild(svgEl("text", { class: "axis", x: cx, y: H - 6, "text-anchor": "middle" }, d.slice(5)));
+    }
     let base = 0;
     const segs = series.map((s) => ({ s, v: s.values[i] })).filter((x) => x.v > 0);
     segs.forEach((seg, j) => {
       const y0 = y(base), y1 = y(base + seg.v);
       base += seg.v;
       const isTop = j === segs.length - 1;
-      const gap = isTop ? 0 : 2; // 2px surface gap between stacked segments
-      const h = Math.max(1, y0 - y1 - gap);
+      const gap = isTop ? 0 : 1.5;
+      const barH = Math.max(1, y0 - y1 - gap);
       const x = cx - bw / 2;
-      const d = isTop ? roundTop(x, y1, bw, Math.max(1, y0 - y1), Math.min(4, bw / 2)) : `M${x},${y1 + gap}h${bw}v${h}h${-bw}z`;
-      svg += `<path d="${d}" fill="${seg.s.color}"/>`;
+      const pathD = isTop
+        ? roundTop(x, y1, bw, Math.max(1, y0 - y1), Math.min(4, bw / 2))
+        : `M${x},${y1 + gap}h${bw}v${barH}h${-bw}z`;
+      const p = svgEl("path", { d: pathD, fill: seg.s.color });
+      p.style.pointerEvents = "none";
+      svg.appendChild(p);
     });
-    svg += `<rect x="${padL + slot * i}" y="${padT}" width="${slot}" height="${plotH}" fill="transparent" data-day="${i}"/>`;
+    svg.appendChild(svgEl("rect", {
+      x: padL + slot * i, y: padT, width: slot, height: plotH,
+      fill: "transparent", "data-day": i
+    }));
   });
-  svg += `</svg>`;
-  host.innerHTML = svg;
+
+  host.replaceChildren(svg);
 
   const tip = $("#tip");
-  const unit = view.metric === "tokens" ? " Token" : " 次";
+  const fmtVal = (v) => {
+    if (view.metric === "cost") return fmtMoney(v);
+    if (view.metric === "tokens") return `${fmtInt.format(v)} Token`;
+    return `${fmtInt.format(v)} 次`;
+  };
+
   host.onmousemove = (e) => {
     const t = e.target.closest("[data-day]");
     if (!t) { tip.style.display = "none"; return; }
     const i = Number(t.dataset.day);
-    const rows = series.filter((s) => s.values[i] > 0).reverse()
-      .map((s) => `<div><span class="swatch" style="background:${s.color}"></span>${esc(s.label)}　<b>${fmtInt.format(s.values[i])}</b>${unit}</div>`).join("");
-    tip.innerHTML = `<div class="muted" style="margin-bottom:4px">${esc(u.days[i])} · 合计 <b>${fmtInt.format(totals[i])}</b>${unit}</div>${rows || '<div class="faint">无用量</div>'}`;
+    const activeRows = series.filter((s) => s.values[i] > 0).reverse();
+    setChildren(tip,
+      h("div", { class: "tip-head" }, `${days[i]} · 合计 `, h("strong", null, fmtVal(totals[i]))),
+      activeRows.length
+        ? activeRows.map((s) =>
+            h("div", { class: "tip-row" },
+              h("span", { class: "tip-label" },
+                h("span", { class: "swatch", style: { background: s.color } }),
+                s.label
+              ),
+              h("strong", null, fmtVal(s.values[i]))
+            )
+          )
+        : h("div", { class: "faint" }, "无记录")
+    );
     tip.style.display = "block";
     const r = tip.getBoundingClientRect();
     let left = e.clientX + 14, topPx = e.clientY + 14;
     if (left + r.width > innerWidth - 8) left = e.clientX - r.width - 14;
     if (topPx + r.height > innerHeight - 8) topPx = e.clientY - r.height - 14;
-    tip.style.left = `${left + scrollX}px`;
-    tip.style.top = `${topPx + scrollY}px`;
+    tip.style.left = `${Math.max(8, left)}px`;
+    tip.style.top = `${Math.max(8, topPx)}px`;
   };
   host.onmouseleave = () => { tip.style.display = "none"; };
-  // Hover sits on transparent day columns drawn above the bars.
-  host.querySelectorAll("path").forEach((p) => { p.style.pointerEvents = "none"; });
 }
+
 function niceStep(raw) {
-  if (raw <= 0) return 1;
+  if (!raw || raw <= 0 || !Number.isFinite(raw)) return 1;
   const p = Math.pow(10, Math.floor(Math.log10(raw)));
   const f = raw / p;
   return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * p;
 }
-function roundTop(x, y, w, h, r) {
-  r = Math.min(r, h);
-  return `M${x},${y + h}V${y + r}Q${x},${y} ${x + r},${y}H${x + w - r}Q${x + w},${y} ${x + w},${y + r}V${y + h}Z`;
-}
-window.addEventListener("resize", () => { if (view.tab === "overview") renderChart(); });
 
-// ---------- users ----------
+function roundTop(x, y, w, hVal, r) {
+  r = Math.min(r, hVal);
+  return `M${x},${y + hVal}V${y + r}Q${x},${y} ${x + r},${y}H${x + w - r}Q${x + w},${y} ${x + w},${y + r}V${y + hVal}Z`;
+}
+
+window.addEventListener("resize", () => { if (state.loaded && view.tab === "overview") renderChart(); });
+
+// ---------- tab 2: users ----------
 function renderUsers() {
   const main = $("#main");
-  main.innerHTML = `
-    <section class="card">
-      <h2>用户 <span class="spacer"></span><button class="btn primary" id="new-user">新建用户</button></h2>
-      ${state.users.length ? `<div class="table-scroll"><table><thead><tr><th>用户</th><th>分组</th><th>可用模型</th><th>额度</th><th class="num">Key</th><th>状态</th><th></th></tr></thead><tbody>
-      ${state.users.map((u) => `<tr>
-        <td><div class="name-cell"><span><span class="swatch" style="background:${userColor.get(u.id)}"></span>${esc(u.name)}</span>${u.note ? `<small>${esc(u.note)}</small>` : ""}</div></td>
-        <td class="nowrap">${esc(groupById(u.group_id)?.name || "—")}</td>
-        <td>${modelChips(u.allowed, 3)}</td>
-        <td class="muted" style="font-size:13px">${limitSummary(u)}</td>
-        <td class="num">${u.key_count}</td>
-        <td class="nowrap">${userStatus(u)}${u.expires_at ? `<div class="hint">到期 ${new Date(u.expires_at * 1000 - 1).toLocaleDateString("zh-CN")}</div>` : ""}</td>
-        <td style="white-space:nowrap;text-align:right">
-          <button class="btn small" data-keys="${u.id}">Key</button>
-          <button class="btn small" data-edit="${u.id}">编辑</button>
-          <button class="btn small danger" data-del="${u.id}">删除</button></td></tr>`).join("")}
-      </tbody></table></div>` : `<div class="empty">还没有用户。先在「模型分组」建一个分组（可选），再新建用户并签发 Key。</div>`}
-    </section>
-    <section class="card">
-      <h2>怎么发给用户</h2>
-      ${cpaBase() ? `<div class="muted" style="font-size:13px">给每个人签发一个 Key，他们把客户端的 Base URL 指向 <code>${esc(cpaBase())}/v1</code>（Claude Code 用 <code>${esc(cpaBase())}</code>）即可。
-      用户可以打开 <a href="${esc(meURL())}" target="_blank" rel="noopener">自助查询页</a>，输入自己的 Key 查看可用模型和用量。原生 <code>api-keys</code> 不受本插件限制，适合留给管理员自己用。</div>`
-      : `<div class="notice" style="margin:0">还没有设置 CPA 的对外地址。到插件设置里填写 <code>public_base_url</code>（例如 https://cpa.example.com），接入说明和自助查询链接才会指向正确的地址。</div>`}
-    </section>`;
-  $("#new-user").addEventListener("click", () => openUserDialog(null));
-  main.querySelectorAll("[data-edit]").forEach((b) => b.addEventListener("click", () => openUserDialog(userById(Number(b.dataset.edit)))));
-  main.querySelectorAll("[data-keys]").forEach((b) => b.addEventListener("click", () => openKeysDialog(userById(Number(b.dataset.keys)))));
-  main.querySelectorAll("[data-del]").forEach((b) => b.addEventListener("click", async () => {
-    const u = userById(Number(b.dataset.del));
-    if (!confirm(`删除用户「${u.name}」？他的 ${u.key_count} 个 Key 会立即失效，历史用量会保留。`)) return;
-    try { await api("user/delete", { method: "POST", body: { id: u.id } }); toast("已删除"); await refresh(); } catch (e) { handleError(e); }
-  }));
+
+  const tableOrEmpty = state.users.length
+    ? h("div", { class: "table-scroll" },
+        h("table", null,
+          h("thead", null,
+            h("tr", null,
+              h("th", null, "用户"),
+              h("th", null, "分组"),
+              h("th", null, "可用模型"),
+              h("th", null, "额度与速率"),
+              h("th", { class: "num" }, "Key"),
+              h("th", null, "状态"),
+              h("th", null, "")
+            )
+          ),
+          h("tbody", null,
+            state.users.map((u) =>
+              h("tr", null,
+                h("td", null,
+                  h("div", { class: "name-cell" },
+                    h("span", { class: "name-line" },
+                      h("span", { class: "swatch", style: { background: userColor.get(u.id) || "var(--series-other)" } }),
+                      u.name
+                    ),
+                    u.note ? h("small", null, u.note) : null
+                  )
+                ),
+                h("td", { class: "nowrap" }, groupById(u.group_id)?.name || "—"),
+                h("td", null, modelChipsEl(u.allowed, 3)),
+                h("td", null, limitSummary(u)),
+                h("td", { class: "num" }, String(u.key_count || 0)),
+                h("td", { class: "nowrap" },
+                  statusBadge(u),
+                  u.expires_at ? h("div", { class: "hint" }, `到期 ${expiryLabel(u)}`) : null
+                ),
+                h("td", { class: "nowrap", style: { textAlign: "right" } },
+                  h("div", { class: "row", style: { justifyContent: "flex-end", gap: "6px", flexWrap: "nowrap" } },
+                    h("button", { class: "btn small", type: "button", onClick: () => openKeysDialog(u) }, "Key"),
+                    h("button", { class: "btn small", type: "button", onClick: () => openUserDialog(u) }, "编辑"),
+                    h("button", { class: "btn small danger", type: "button", onClick: () => deleteUser(u) }, "删除")
+                  )
+                )
+              )
+            )
+          )
+        )
+      )
+    : h("div", { class: "empty" },
+        h("div", null, "还没有用户，先新建一个"),
+        h("button", { class: "btn primary", type: "button", onClick: () => openUserDialog(null) }, "新建用户")
+      );
+
+  const usersCard = h("section", { class: "card" },
+    h("div", { class: "card-head" },
+      h("h2", null, "用户"),
+      h("span", { class: "card-sub" }, `${state.users.length} 人`),
+      h("span", { class: "spacer" }),
+      h("button", { class: "btn primary", type: "button", onClick: () => openUserDialog(null) }, "新建用户")
+    ),
+    tableOrEmpty
+  );
+
+  const base = cpaBase();
+  const guideBody = base
+    ? h("div", { class: "muted", style: { fontSize: "13px", lineHeight: "1.7" } },
+        "给每个人签发一个 Key，他们把客户端的 Base URL 指向 ",
+        h("code", null, `${base}/v1`),
+        "（Claude Code 用 ",
+        h("code", null, base),
+        "）即可。用户可以打开 ",
+        h("a", { href: meURL(), target: "_blank", rel: "noopener noreferrer" }, "自助查询页"),
+        "，输入自己的 Key 查看消费金额、剩余额度、可用模型和单价。原生 ",
+        h("code", null, "api-keys"),
+        " 不受本插件限制，适合留给管理员自己用。"
+      )
+    : h("div", { class: "notice", style: { marginBottom: "0" } },
+        "还没有设置 CPA 的对外地址。到插件设置里填写 ",
+        h("code", null, "public_base_url"),
+        "（例如 https://cpa.example.com），接入说明和自助查询链接才会指向正确的地址。"
+      );
+
+  const guideCard = h("section", { class: "card" },
+    h("div", { class: "card-head" }, h("h2", null, "怎么发给用户")),
+    guideBody
+  );
+
+  main.replaceChildren(usersCard, guideCard);
 }
 
-function limitSummary(u) {
-  const parts = [];
-  if (u.daily_tokens) parts.push(`日 ${num(u.daily_tokens)} Token`);
-  if (u.daily_requests) parts.push(`日 ${num(u.daily_requests)} 次`);
-  if (u.monthly_tokens) parts.push(`月 ${num(u.monthly_tokens)} Token`);
-  if (u.monthly_requests) parts.push(`月 ${num(u.monthly_requests)} 次`);
-  if (u.max_concurrency) parts.push(`并发 ${u.max_concurrency}`);
-  return parts.length ? esc(parts.join(" · ")) : `<span class="faint">不限</span>`;
+async function deleteUser(u) {
+  if (!confirm(`删除用户「${u.name}」？他的 ${u.key_count || 0} 个 Key 会立即失效，历史用量会保留。`)) return;
+  try {
+    await api("user/delete", { method: "POST", body: { id: u.id } });
+    toast("已删除");
+    await refresh();
+  } catch (e) { handleError(e); }
 }
 
 // ---------- dialogs ----------
 const dlg = $("#dlg");
 dlg.addEventListener("click", (e) => { if (e.target.closest("[data-close]")) dlg.close(); });
-function openDialog(title, bodyHTML, footHTML) {
+
+function openDialog(title, bodyNodes, footNodes) {
   $("#dlg-title").textContent = title;
-  $("#dlg-body").innerHTML = bodyHTML;
-  $("#dlg-foot").innerHTML = footHTML;
+  setChildren($("#dlg-body"), bodyNodes);
+  setChildren($("#dlg-foot"), footNodes);
   if (!dlg.open) dlg.showModal();
 }
 
-// A model picker: known models as checkboxes plus free-form patterns (supports *).
-function modelPicker(container, initial, { emptyHint } = {}) {
+// Model picker: known models as checkboxes plus wildcard rules.
+function createModelPicker(initial, { emptyHint, onChange } = {}) {
   const selected = new Set((initial || []).map((m) => m.toLowerCase()));
-  container.innerHTML = `<div class="picker">
-    <div class="picker-top"><input class="input" placeholder="搜索模型，或输入规则如 gpt-5* 后回车" data-q>
-      <button class="btn small" type="button" data-add>添加规则</button>
-      <button class="btn small" type="button" data-all>全部模型 *</button>
-      <button class="btn small" type="button" data-refresh title="从 CPA 的凭证读取模型">刷新列表</button></div>
-    <div class="list" data-list></div>
-    <div class="selected" data-sel></div></div>`;
-  const q = $("[data-q]", container), list = $("[data-list]", container), sel = $("[data-sel]", container);
+  const qInput = h("input", { class: "input", placeholder: "搜索模型，或输入规则如 gpt-5* 后回车" });
+  const listEl = h("div", { class: "list" });
+  const selEl = h("div", { class: "selected" });
+
+  const notify = () => { if (onChange) onChange(); };
+
   const draw = () => {
-    const term = q.value.trim().toLowerCase();
+    const term = qInput.value.trim().toLowerCase();
     const models = state.models.filter((m) => !term || m.toLowerCase().includes(term));
-    list.innerHTML = models.length ? models.map((m) => `<label title="${esc(m)}"><input type="checkbox" value="${esc(m)}" ${selected.has(m.toLowerCase()) ? "checked" : ""}><span>${esc(m)}</span></label>`).join("")
-      : `<div class="faint" style="padding:6px">${state.models.length ? "没有匹配的模型，回车可作为规则添加" : "还没有发现模型：点「刷新列表」，或发一次 &#47;v1/models 请求"}</div>`;
-    sel.innerHTML = selected.size ? [...selected].sort().map((m) => `<span class="chip">${esc(m)}<button type="button" data-rm="${esc(m)}" aria-label="移除">×</button></span>`).join("")
-      : `<span class="faint">${esc(emptyHint || "未选择任何模型")}</span>`;
+    if (models.length) {
+      listEl.replaceChildren(...models.map((m) => {
+        const lower = m.toLowerCase();
+        const cb = h("input", {
+          type: "checkbox",
+          checked: selected.has(lower),
+          onChange: (e) => {
+            if (e.target.checked) selected.add(lower); else selected.delete(lower);
+            draw();
+            notify();
+          }
+        });
+        return h("label", { title: m }, cb, h("span", null, m));
+      }));
+    } else {
+      listEl.replaceChildren(h("div", { class: "faint", style: { padding: "6px" } },
+        state.models.length
+          ? "没有匹配的模型，回车可作为通配规则添加"
+          : "还没有发现模型：点「刷新列表」，或发一次 /v1/models 请求"
+      ));
+    }
+
+    if (selected.size) {
+      selEl.replaceChildren(...[...selected].sort().map((m) =>
+        h("span", { class: "chip" },
+          m,
+          h("button", {
+            type: "button",
+            "aria-label": "移除",
+            onClick: () => { selected.delete(m); draw(); notify(); }
+          }, "×")
+        )
+      ));
+    } else {
+      selEl.replaceChildren(h("span", { class: "faint" }, emptyHint || "未选择任何模型"));
+    }
   };
-  const addRule = () => { const v = q.value.trim().toLowerCase(); if (v) { selected.add(v); q.value = ""; draw(); } };
-  list.addEventListener("change", (e) => { const v = e.target.value.toLowerCase(); e.target.checked ? selected.add(v) : selected.delete(v); draw(); });
-  sel.addEventListener("click", (e) => { const v = e.target.dataset.rm; if (v) { selected.delete(v); draw(); } });
-  q.addEventListener("input", draw);
-  q.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); addRule(); } });
-  $("[data-add]", container).addEventListener("click", addRule);
-  $("[data-all]", container).addEventListener("click", () => { selected.add("*"); draw(); });
-  $("[data-refresh]", container).addEventListener("click", async () => {
-    try { const r = await api("models/refresh", { method: "POST", body: {} }); state.models = r.models || []; draw(); toast(r.added ? "已更新模型列表" : "没有新模型"); }
-    catch (e) { handleError(e); }
-  });
+
+  const addRule = () => {
+    const v = qInput.value.trim().toLowerCase();
+    if (!v) return;
+    selected.add(v);
+    qInput.value = "";
+    draw();
+    notify();
+  };
+
+  qInput.addEventListener("input", draw);
+  qInput.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); addRule(); } });
+
+  const el = h("div", { class: "picker" },
+    h("div", { class: "picker-top" },
+      qInput,
+      h("button", { class: "btn small", type: "button", onClick: addRule }, "添加规则"),
+      h("button", { class: "btn small", type: "button", onClick: () => { selected.add("*"); draw(); notify(); } }, "全部模型 *"),
+      h("button", {
+        class: "btn small",
+        type: "button",
+        title: "从 CPA 的凭证读取模型",
+        onClick: async () => {
+          try {
+            const r = await api("models/refresh", { method: "POST", body: {} });
+            state.models = r.models || [];
+            draw();
+            toast(r.added ? "已更新模型列表" : "没有新模型");
+          } catch (e) { handleError(e); }
+        }
+      }, "刷新列表")
+    ),
+    listEl,
+    selEl
+  );
+
   draw();
-  return { values: () => [...selected] };
+  return { el, values: () => [...selected] };
 }
 
 function openGroupDialog(g) {
-  openDialog(g ? `编辑分组：${g.name}` : "新建分组", `
-    <div class="grid2">
-      <label class="field">名称<input id="g-name" value="${esc(g?.name || "")}" maxlength="40" required></label>
-      <label class="field">备注<input id="g-note" value="${esc(g?.note || "")}" maxlength="120"></label>
-    </div>
-    <div style="margin-top:14px"><div class="muted" style="font-size:13px;margin-bottom:6px">允许的模型 <span class="hint">勾选具体模型，或添加通配规则（* 匹配任意字符）</span></div><div id="g-models"></div></div>`,
-    `<button class="btn" data-close>取消</button><button class="btn primary" id="g-save">保存</button>`);
-  const picker = modelPicker($("#g-models"), g?.models, { emptyHint: "未选择：这个分组的用户将无法调用任何模型" });
-  $("#g-save").addEventListener("click", async () => {
-    const body = { id: g?.id || 0, name: $("#g-name").value.trim(), note: $("#g-note").value.trim(), models: picker.values() };
-    if (!body.name) return toast("请填写分组名称", true);
-    try { await api("group/save", { method: "POST", body }); dlg.close(); toast("已保存"); await refresh(); } catch (e) { handleError(e); }
-  });
+  const nameIn = h("input", { maxlength: "40", required: true, value: g?.name || "" });
+  const noteIn = h("input", { maxlength: "120", value: g?.note || "" });
+  const picker = createModelPicker(g?.models, { emptyHint: "未选择：这个分组的用户将无法调用任何模型" });
+
+  openDialog(
+    g ? `编辑分组：${g.name}` : "新建分组",
+    [
+      h("div", { class: "grid2" },
+        h("label", { class: "field" }, "名称", nameIn),
+        h("label", { class: "field" }, "备注", noteIn)
+      ),
+      h("div", { style: { marginTop: "14px" } },
+        h("div", { class: "muted", style: { fontSize: "13px", marginBottom: "6px" } },
+          "允许的模型 ",
+          h("span", { class: "hint" }, "勾选具体模型，或添加通配规则（* 匹配任意字符）")
+        ),
+        picker.el
+      )
+    ],
+    [
+      h("button", { class: "btn", type: "button", dataset: { close: "1" } }, "取消"),
+      h("button", {
+        class: "btn primary",
+        type: "button",
+        onClick: async () => {
+          const body = { id: g?.id || 0, name: nameIn.value.trim(), note: noteIn.value.trim(), models: picker.values() };
+          if (!body.name) { toast("请填写分组名称", true); nameIn.focus(); return; }
+          try {
+            await api("group/save", { method: "POST", body });
+            dlg.close();
+            toast("已保存");
+            await refresh();
+          } catch (e) { handleError(e); }
+        }
+      }, "保存")
+    ]
+  );
 }
 
-function dateInputValue(ts) {
-  if (!ts) return "";
-  const d = new Date(ts * 1000 - 1);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+function moneyField(label, val, hint) {
+  const inp = h("input", {
+    type: "number", min: "0", step: "any",
+    value: val > 0 ? String(val) : "",
+    placeholder: "0 = 不限"
+  });
+  const wrap = h("label", { class: "field" },
+    label,
+    h("div", { class: "prefix-input" },
+      h("span", { class: "prefix" }, currencySymbol()),
+      inp
+    ),
+    hint ? h("span", { class: "hint" }, hint) : null
+  );
+  return { wrap, input: inp };
+}
+
+function intField(label, val, hint) {
+  const inp = h("input", {
+    type: "number", min: "0", step: "1",
+    value: val > 0 ? String(val) : "",
+    placeholder: "0 = 不限"
+  });
+  const wrap = h("label", { class: "field" },
+    label,
+    inp,
+    hint ? h("span", { class: "hint" }, hint) : null
+  );
+  return { wrap, input: inp };
 }
 
 function openUserDialog(u) {
-  const numField = (id, label, val, hint) => `<label class="field">${label}<input id="${id}" type="number" min="0" step="1" value="${val || ""}" placeholder="0 = 不限">${hint ? `<span class="hint">${hint}</span>` : ""}</label>`;
-  openDialog(u ? `编辑用户：${u.name}` : "新建用户", `
-    <div class="grid2">
-      <label class="field">名称<input id="u-name" value="${esc(u?.name || "")}" maxlength="40" required></label>
-      <label class="field">备注<input id="u-note" value="${esc(u?.note || "")}" maxlength="120"></label>
-      <label class="field">模型分组<select id="u-group"><option value="0">不使用分组</option>${state.groups.map((g) => `<option value="${g.id}" ${u?.group_id === g.id ? "selected" : ""}>${esc(g.name)}</option>`).join("")}</select></label>
-      <label class="field">到期日<input id="u-exp" type="date" value="${dateInputValue(u?.expires_at)}"><span class="hint">留空为永久；到期当天结束后停止服务</span></label>
-      ${numField("u-dt", "每日 Token 上限", u?.daily_tokens)}
-      ${numField("u-mt", "每月 Token 上限", u?.monthly_tokens)}
-      ${numField("u-dr", "每日请求上限", u?.daily_requests)}
-      ${numField("u-mr", "每月请求上限", u?.monthly_requests)}
-      ${numField("u-cc", "最大并发", u?.max_concurrency, "同时进行中的请求数")}
-      <label class="check" style="align-self:end;padding-bottom:8px"><input id="u-dis" type="checkbox" ${u?.disabled ? "checked" : ""}> 停用该用户</label>
-    </div>
-    <div style="margin-top:14px"><div class="muted" style="font-size:13px;margin-bottom:6px">额外允许的模型 <span class="hint">与分组的模型合并生效</span></div><div id="u-models"></div></div>
-    <div style="margin-top:12px" class="muted"><span style="font-size:13px">实际可用：</span><span id="u-effective"></span></div>
-    <p class="hint">Token 上限在请求开始前检查，单个请求可能略微超出，超出后的下一次请求会被拒绝。</p>`,
-    `<button class="btn" data-close>取消</button><button class="btn primary" id="u-save">保存</button>`);
-  const picker = modelPicker($("#u-models"), u?.extra_models, { emptyHint: "无额外模型" });
-  const effective = () => {
-    const g = groupById(Number($("#u-group").value));
+  const nameIn = h("input", { maxlength: "40", required: true, value: u?.name || "" });
+  const noteIn = h("input", { maxlength: "120", value: u?.note || "" });
+  const grpSel = h("select", { value: String(u?.group_id || 0) },
+    h("option", { value: "0" }, "不使用分组"),
+    state.groups.map((g) => h("option", { value: String(g.id), selected: u?.group_id === g.id }, g.name))
+  );
+  const expIn = h("input", { type: "date", value: dateInputValue(u?.expires_at) });
+  const disIn = h("input", { type: "checkbox", checked: Boolean(u?.disabled) });
+
+  // Cost limits
+  const dc = moneyField("每日金额上限", u?.daily_cost_limit);
+  const mc = moneyField("每月金额上限", u?.monthly_cost_limit);
+  const tc = moneyField("累计金额上限", u?.total_cost_limit);
+
+  // Rate limits
+  const cc = intField("最大并发", u?.max_concurrency, "同时进行中的请求数");
+  const rpm = intField("每分钟请求数（RPM）", u?.rpm_limit, "最近 60 秒内允许的请求数");
+
+  // Advanced token/request limits
+  const dt = intField("每日 Token 上限", u?.daily_tokens);
+  const mt = intField("每月 Token 上限", u?.monthly_tokens);
+  const dr = intField("每日请求上限", u?.daily_requests);
+  const mr = intField("每月请求上限", u?.monthly_requests);
+  const hasAdvanced = Boolean(u && (u.daily_tokens || u.monthly_tokens || u.daily_requests || u.monthly_requests));
+
+  const effEl = h("span");
+  const updateEffective = () => {
+    const g = groupById(Number(grpSel.value));
     const all = [...new Set([...(g?.models || []), ...picker.values()])].sort();
-    $("#u-effective").innerHTML = all.length ? modelChips(all, 12) : `<span style="color:var(--error-color)">无——该用户将无法调用任何模型</span>`;
+    if (all.length) {
+      effEl.replaceChildren(modelChipsEl(all, 12));
+    } else {
+      effEl.replaceChildren(h("span", { style: { color: "var(--budget-bad)" } }, "无——该用户将无法调用任何模型"));
+    }
   };
-  $("#u-group").addEventListener("change", effective);
-  $("#u-models").addEventListener("click", () => setTimeout(effective));
-  $("#u-models").addEventListener("change", effective);
-  $("#u-models").addEventListener("keydown", () => setTimeout(effective));
-  effective();
-  $("#u-save").addEventListener("click", async () => {
-    const intv = (id) => Math.max(0, Math.floor(Number($(id).value) || 0));
-    const exp = $("#u-exp").value;
-    let expiresAt = 0;
-    if (exp) { const [y, m, d] = exp.split("-").map(Number); expiresAt = Math.floor(new Date(y, m - 1, d + 1).getTime() / 1000); }
-    const body = { id: u?.id || 0, name: $("#u-name").value.trim(), note: $("#u-note").value.trim(), group_id: Number($("#u-group").value),
-      extra_models: picker.values(), disabled: $("#u-dis").checked, expires_at: expiresAt,
-      daily_tokens: intv("#u-dt"), monthly_tokens: intv("#u-mt"), daily_requests: intv("#u-dr"), monthly_requests: intv("#u-mr"), max_concurrency: intv("#u-cc") };
-    if (!body.name) return toast("请填写用户名称", true);
-    try {
-      const r = await api("user/save", { method: "POST", body });
-      dlg.close(); toast("已保存"); await refresh();
-      if (!u) openKeysDialog(userById(r.id), true);
-    } catch (e) { handleError(e); }
-  });
+  const picker = createModelPicker(u?.extra_models, { emptyHint: "无额外模型", onChange: updateEffective });
+  grpSel.addEventListener("change", updateEffective);
+  updateEffective();
+
+  const body = [
+    h("div", { class: "grid2" },
+      h("label", { class: "field" }, "名称", nameIn),
+      h("label", { class: "field" }, "备注", noteIn),
+      h("label", { class: "field" }, "模型分组", grpSel),
+      h("label", { class: "field" }, "到期日", expIn, h("span", { class: "hint" }, "留空为永久；到期当天结束后停止服务"))
+    ),
+    h("div", { style: { marginTop: "10px" } },
+      h("label", { class: "check" }, disIn, "停用该用户")
+    ),
+
+    // Money quota section
+    h("div", { class: "form-section" },
+      h("div", { class: "form-section-title" },
+        "金额额度",
+        h("span", { class: "hint", style: { fontWeight: "400" } }, "0 或留空为不限")
+      ),
+      h("div", { class: "grid3" }, dc.wrap, mc.wrap, tc.wrap)
+    ),
+
+    // Rate section
+    h("div", { class: "form-section" },
+      h("div", { class: "form-section-title" }, "速率与并发"),
+      h("div", { class: "grid2" }, cc.wrap, rpm.wrap)
+    ),
+
+    // Collapsible advanced limits
+    h("details", { class: "adv", open: hasAdvanced },
+      h("summary", null, "高级额度（Token / 请求次数上限）"),
+      h("div", { class: "adv-body" },
+        h("div", { class: "grid2" }, dt.wrap, mt.wrap, dr.wrap, mr.wrap)
+      )
+    ),
+
+    // Extra models
+    h("div", { class: "form-section" },
+      h("div", { class: "form-section-title" },
+        "额外允许的模型",
+        h("span", { class: "hint", style: { fontWeight: "400" } }, "与分组的模型合并生效")
+      ),
+      picker.el,
+      h("div", { style: { marginTop: "10px", fontSize: "13px" }, class: "muted" }, "实际可用：", effEl)
+    ),
+    h("p", { class: "hint", style: { marginBottom: "0" } },
+      "金额与 Token 上限在请求开始前检查，单个进行中的请求可能略微超出，超出后的下一次请求会被拒绝。"
+    )
+  ];
+
+  openDialog(
+    u ? `编辑用户：${u.name}` : "新建用户",
+    body,
+    [
+      h("button", { class: "btn", type: "button", dataset: { close: "1" } }, "取消"),
+      h("button", {
+        class: "btn primary",
+        type: "button",
+        onClick: async () => {
+          const flt = (inp) => Math.max(0, Number(inp.value) || 0);
+          const intv = (inp) => Math.max(0, Math.floor(Number(inp.value) || 0));
+          const exp = expIn.value;
+          let expiresAt = 0;
+          if (exp) {
+            const [y, m, d] = exp.split("-").map(Number);
+            expiresAt = Math.floor(new Date(y, m - 1, d + 1).getTime() / 1000);
+          }
+          const payload = {
+            id: u?.id || 0,
+            name: nameIn.value.trim(),
+            note: noteIn.value.trim(),
+            group_id: Number(grpSel.value) || 0,
+            extra_models: picker.values(),
+            disabled: disIn.checked,
+            expires_at: expiresAt,
+            daily_cost_limit: flt(dc.input),
+            monthly_cost_limit: flt(mc.input),
+            total_cost_limit: flt(tc.input),
+            max_concurrency: intv(cc.input),
+            rpm_limit: intv(rpm.input),
+            daily_tokens: intv(dt.input),
+            monthly_tokens: intv(mt.input),
+            daily_requests: intv(dr.input),
+            monthly_requests: intv(mr.input),
+          };
+          if (!payload.name) { toast("请填写用户名称", true); nameIn.focus(); return; }
+          try {
+            const r = await api("user/save", { method: "POST", body: payload });
+            dlg.close();
+            toast("已保存");
+            await refresh();
+            if (!u) {
+              const created = userById(r.id);
+              if (created) openKeysDialog(created, true);
+            }
+          } catch (e) { handleError(e); }
+        }
+      }, "保存")
+    ]
+  );
 }
 
 function openKeysDialog(u, fresh) {
   const draw = (newKey) => {
     const keys = state.keys.filter((k) => k.user_id === u.id);
-    openDialog(`${u.name} 的 Key`, `
-      ${newKey ? `<div class="keybox"><div style="margin-bottom:6px"><b>新 Key 已生成</b> <span class="hint">只显示这一次，请现在复制</span></div>
-        <div class="mono" id="new-key">${esc(newKey)}</div>
-        <div class="row" style="margin-top:10px"><button class="btn small" id="copy-key">复制 Key</button><button class="btn small" id="copy-cfg">复制接入说明</button></div></div>` : ""}
-      ${keys.length ? `<table><thead><tr><th>名称</th><th>Key</th><th>创建</th><th>最近使用</th><th>状态</th><th></th></tr></thead><tbody>
-        ${keys.map((k) => `<tr><td>${esc(k.name || "—")}</td><td class="mono">${esc(k.hint)}</td><td>${new Date(k.created_at * 1000).toLocaleDateString("zh-CN")}</td><td>${when(k.last_used_at)}</td>
-          <td>${k.disabled ? `<span class="status off">已停用</span>` : `<span class="status">可用</span>`}</td>
-          <td style="text-align:right;white-space:nowrap"><button class="btn small" data-toggle="${k.id}">${k.disabled ? "启用" : "停用"}</button> <button class="btn small danger" data-kdel="${k.id}">删除</button></td></tr>`).join("")}
-      </tbody></table>` : `<div class="empty">${fresh ? "用户已创建，给他签发第一个 Key 吧。" : "还没有 Key。"}</div>`}
-      <div class="row" style="margin-top:14px"><input class="input" id="k-name" placeholder="Key 名称，例如 笔记本 / Claude Code" maxlength="40" style="flex:1"><button class="btn primary" id="k-new">签发新 Key</button></div>`,
-      `<button class="btn" data-close>完成</button>`);
-    if (newKey) {
-      $("#copy-key").addEventListener("click", () => copy(newKey, "Key 已复制"));
-      $("#copy-cfg").addEventListener("click", () => copy(
-        `OpenAI 兼容 Base URL：${cpaBase() || "<CPA 地址>"}/v1\nClaude Code（ANTHROPIC_BASE_URL）：${cpaBase() || "<CPA 地址>"}\nAPI Key：${newKey}${meURL() ? `\n自助查询：${meURL()}` : ""}`, "接入说明已复制"));
-    }
-    $("#k-new").addEventListener("click", async () => {
-      try {
-        const r = await api("key/create", { method: "POST", body: { user_id: u.id, name: $("#k-name").value.trim() } });
-        await loadState(); draw(r.key);
-      } catch (e) { handleError(e); }
+    const kNameIn = h("input", {
+      class: "input",
+      placeholder: "Key 名称，例如 笔记本 / Claude Code",
+      maxlength: "40",
+      style: { flex: "1" }
     });
-    $("#dlg-body").querySelectorAll("[data-toggle]").forEach((b) => b.addEventListener("click", async () => {
-      const k = keyById(Number(b.dataset.toggle));
-      try { await api("key/update", { method: "POST", body: { id: k.id, name: k.name, disabled: !k.disabled } }); await loadState(); draw(); } catch (e) { handleError(e); }
-    }));
-    $("#dlg-body").querySelectorAll("[data-kdel]").forEach((b) => b.addEventListener("click", async () => {
-      const k = keyById(Number(b.dataset.kdel));
-      if (!confirm(`删除 Key「${k.name || k.hint}」？使用它的客户端会立即无法访问。`)) return;
-      try { await api("key/delete", { method: "POST", body: { id: k.id } }); await loadState(); draw(); } catch (e) { handleError(e); }
-    }));
+
+    const newKeyBox = newKey
+      ? h("div", { class: "keybox" },
+          h("div", { style: { marginBottom: "6px" } },
+            h("strong", null, "新 Key 已生成 "),
+            h("span", { class: "hint" }, "只显示这一次，请现在复制")
+          ),
+          h("div", { class: "mono" }, newKey),
+          h("div", { class: "row", style: { marginTop: "10px" } },
+            h("button", { class: "btn small primary", type: "button", onClick: () => copyText(newKey, "Key 已复制") }, "复制 Key"),
+            h("button", {
+              class: "btn small",
+              type: "button",
+              onClick: () => {
+                const base = cpaBase() || "<CPA 地址>";
+                const text =
+                  `OpenAI 兼容 Base URL：${base}/v1\n` +
+                  `Claude Code（ANTHROPIC_BASE_URL）：${base}\n` +
+                  `API Key：${newKey}` +
+                  (meURL() ? `\n自助查询：${meURL()}` : "");
+                copyText(text, "接入说明已复制");
+              }
+            }, "复制接入说明")
+          )
+        )
+      : null;
+
+    const listEl = keys.length
+      ? h("div", { class: "table-scroll" },
+          h("table", null,
+            h("thead", null,
+              h("tr", null,
+                h("th", null, "名称"),
+                h("th", null, "Key"),
+                h("th", null, "创建"),
+                h("th", null, "最近使用"),
+                h("th", null, "状态"),
+                h("th", null, "")
+              )
+            ),
+            h("tbody", null,
+              keys.map((k) =>
+                h("tr", null,
+                  h("td", null, k.name || "—"),
+                  h("td", { class: "mono nowrap" }, k.hint),
+                  h("td", { class: "nowrap" }, new Date(k.created_at * 1000).toLocaleDateString("zh-CN")),
+                  h("td", { class: "nowrap" }, when(k.last_used_at)),
+                  h("td", { class: "nowrap" }, k.disabled ? h("span", { class: "status off" }, "已停用") : h("span", { class: "status" }, "可用")),
+                  h("td", { class: "nowrap", style: { textAlign: "right" } },
+                    h("div", { class: "row", style: { justifyContent: "flex-end", gap: "6px", flexWrap: "nowrap" } },
+                      h("button", {
+                        class: "btn small",
+                        type: "button",
+                        onClick: async () => {
+                          try {
+                            await api("key/update", { method: "POST", body: { id: k.id, name: k.name, disabled: !k.disabled } });
+                            await loadState();
+                            draw();
+                          } catch (e) { handleError(e); }
+                        }
+                      }, k.disabled ? "启用" : "停用"),
+                      h("button", {
+                        class: "btn small danger",
+                        type: "button",
+                        onClick: async () => {
+                          if (!confirm(`删除 Key「${k.name || k.hint}」？使用它的客户端会立即无法访问。`)) return;
+                          try {
+                            await api("key/delete", { method: "POST", body: { id: k.id } });
+                            await loadState();
+                            draw();
+                          } catch (e) { handleError(e); }
+                        }
+                      }, "删除")
+                    )
+                  )
+                )
+              )
+            )
+          )
+        )
+      : h("div", { class: "empty" }, fresh ? "用户已创建，给他签发第一个 Key 吧。" : "还没有 Key。");
+
+    const createKey = async () => {
+      try {
+        const r = await api("key/create", { method: "POST", body: { user_id: u.id, name: kNameIn.value.trim() } });
+        await loadState();
+        draw(r.key);
+      } catch (e) { handleError(e); }
+    };
+    kNameIn.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); createKey(); } });
+
+    openDialog(
+      `${u.name} 的 Key`,
+      [
+        newKeyBox,
+        listEl,
+        h("div", { class: "row", style: { marginTop: "14px" } },
+          kNameIn,
+          h("button", { class: "btn primary", type: "button", onClick: createKey }, "签发新 Key")
+        )
+      ],
+      h("button", { class: "btn", type: "button", dataset: { close: "1" } }, "完成")
+    );
   };
+
   draw();
-  dlg.addEventListener("close", () => { if (view.tab === "users") render(); }, { once: true });
+  dlg.addEventListener("close", () => { if (view.tab === "users" || view.tab === "overview") render(); }, { once: true });
 }
 
-// ---------- groups ----------
+// ---------- tab 3: groups ----------
 function renderGroups() {
   const main = $("#main");
   const count = (gid) => state.users.filter((u) => u.group_id === gid).length;
-  main.innerHTML = `
-    <section class="card">
-      <h2>模型分组 <span class="faint" style="font-weight:400;font-size:13px">一组可复用的模型白名单，用户可再单独追加</span><span class="spacer"></span>
-        <button class="btn primary" id="new-group">新建分组</button></h2>
-      ${state.groups.length ? `<div class="table-scroll"><table><thead><tr><th>分组</th><th>模型</th><th class="num">用户数</th><th></th></tr></thead><tbody>
-        ${state.groups.map((g) => `<tr><td><div class="name-cell"><span>${esc(g.name)}</span>${g.note ? `<small>${esc(g.note)}</small>` : ""}</div></td>
-          <td>${modelChips(g.models, 8)}</td><td class="num">${count(g.id)}</td>
-          <td style="text-align:right;white-space:nowrap"><button class="btn small" data-gedit="${g.id}">编辑</button> <button class="btn small danger" data-gdel="${g.id}">删除</button></td></tr>`).join("")}
-      </tbody></table></div>` : `<div class="empty">还没有分组。例如建一个「基础」分组只放便宜模型，再建一个「全部」分组用 * 放开所有模型。</div>`}
-    </section>
-    <section class="card">
-      <h2>已发现的模型 <span class="faint" style="font-weight:400;font-size:13px">${state.models.length} 个</span><span class="spacer"></span><button class="btn" id="refresh-models">从 CPA 刷新</button></h2>
-      <div>${state.models.length ? state.models.map((m) => `<span class="chip">${esc(m)}</span>`).join("") : `<span class="faint">还没有。点「从 CPA 刷新」，或用任意 Key 请求一次 &#47;v1/models。</span>`}</div>
-      <p class="hint">列表来自 CPA 凭证的模型、&#47;v1/models 的返回和实际请求。模型别名会在第一次出现在 &#47;v1/models 后加入。</p>
-    </section>`;
-  $("#new-group").addEventListener("click", () => openGroupDialog(null));
-  $("#refresh-models").addEventListener("click", async () => {
-    try { const r = await api("models/refresh", { method: "POST", body: {} }); state.models = r.models || []; renderGroups(); toast(r.added ? "已更新" : "没有新模型"); } catch (e) { handleError(e); }
-  });
-  main.querySelectorAll("[data-gedit]").forEach((b) => b.addEventListener("click", () => openGroupDialog(groupById(Number(b.dataset.gedit)))));
-  main.querySelectorAll("[data-gdel]").forEach((b) => b.addEventListener("click", async () => {
-    const g = groupById(Number(b.dataset.gdel));
-    const n = count(g.id);
-    if (!confirm(`删除分组「${g.name}」？${n ? `${n} 个用户会变成无分组，只保留各自的额外模型。` : ""}`)) return;
-    try { await api("group/delete", { method: "POST", body: { id: g.id } }); toast("已删除"); await refresh(); } catch (e) { handleError(e); }
-  }));
+
+  const groupsContent = state.groups.length
+    ? h("div", { class: "table-scroll" },
+        h("table", null,
+          h("thead", null,
+            h("tr", null,
+              h("th", null, "分组"),
+              h("th", null, "模型"),
+              h("th", { class: "num" }, "用户数"),
+              h("th", null, "")
+            )
+          ),
+          h("tbody", null,
+            state.groups.map((g) =>
+              h("tr", null,
+                h("td", null,
+                  h("div", { class: "name-cell" },
+                    h("span", { class: "name-line" }, g.name),
+                    g.note ? h("small", null, g.note) : null
+                  )
+                ),
+                h("td", null, modelChipsEl(g.models, 8)),
+                h("td", { class: "num" }, String(count(g.id))),
+                h("td", { class: "nowrap", style: { textAlign: "right" } },
+                  h("div", { class: "row", style: { justifyContent: "flex-end", gap: "6px", flexWrap: "nowrap" } },
+                    h("button", { class: "btn small", type: "button", onClick: () => openGroupDialog(g) }, "编辑"),
+                    h("button", {
+                      class: "btn small danger",
+                      type: "button",
+                      onClick: async () => {
+                        const n = count(g.id);
+                        if (!confirm(`删除分组「${g.name}」？${n ? `${n} 个用户会变成无分组，只保留各自的额外模型。` : ""}`)) return;
+                        try {
+                          await api("group/delete", { method: "POST", body: { id: g.id } });
+                          toast("已删除");
+                          await refresh();
+                        } catch (e) { handleError(e); }
+                      }
+                    }, "删除")
+                  )
+                )
+              )
+            )
+          )
+        )
+      )
+    : h("div", { class: "empty" },
+        h("div", null, "还没有分组。例如建一个「基础」分组只放便宜模型，再建一个「全部」分组用 * 放开所有模型。"),
+        h("button", { class: "btn primary", type: "button", onClick: () => openGroupDialog(null) }, "新建分组")
+      );
+
+  const groupsCard = h("section", { class: "card" },
+    h("div", { class: "card-head" },
+      h("h2", null, "模型分组"),
+      h("span", { class: "card-sub" }, "一组可复用的模型白名单，用户可再单独追加"),
+      h("span", { class: "spacer" }),
+      h("button", { class: "btn primary", type: "button", onClick: () => openGroupDialog(null) }, "新建分组")
+    ),
+    groupsContent
+  );
+
+  const modelsCard = h("section", { class: "card" },
+    h("div", { class: "card-head" },
+      h("h2", null, "已发现的模型"),
+      h("span", { class: "card-sub" }, `${state.models.length} 个`),
+      h("span", { class: "spacer" }),
+      h("button", {
+        class: "btn",
+        type: "button",
+        onClick: async () => {
+          try {
+            const r = await api("models/refresh", { method: "POST", body: {} });
+            state.models = r.models || [];
+            renderGroups();
+            toast(r.added ? "已更新" : "没有新模型");
+          } catch (e) { handleError(e); }
+        }
+      }, "从 CPA 刷新")
+    ),
+    h("div", null,
+      state.models.length
+        ? state.models.map((m) => h("span", { class: "chip" }, m))
+        : h("span", { class: "faint" }, "还没有。点「从 CPA 刷新」，或用任意 Key 请求一次 /v1/models。")
+    ),
+    h("p", { class: "hint", style: { marginBottom: "0" } },
+      "列表来自 CPA 凭证的模型、/v1/models 的返回和实际请求。模型别名会在第一次出现在 /v1/models 后加入。"
+    )
+  );
+
+  main.replaceChildren(groupsCard, modelsCard);
 }
 
-// ---------- logs ----------
+// ---------- tab 4: prices ----------
+function renderPrices() {
+  const main = $("#main");
+  const sym = currencySymbol();
+  const knownModels = [...new Set([...(state.models || []), ...(state.unpriced_models || [])])].sort();
+
+  const datalist = h("datalist", { id: "known-models-list" },
+    knownModels.map((m) => h("option", { value: m }))
+  );
+
+  // Add-price form inputs
+  const addModel = h("input", {
+    class: "input mono",
+    list: "known-models-list",
+    placeholder: "模型名或通配规则，如 gpt-5*",
+    value: view.prefillPriceModel || ""
+  });
+  const addIn = h("input", { class: "input tnum", type: "number", min: "0", step: "any", placeholder: "0" });
+  const addCached = h("input", { class: "input tnum", type: "number", min: "0", step: "any", placeholder: "0" });
+  const addOut = h("input", { class: "input tnum", type: "number", min: "0", step: "any", placeholder: "0" });
+  const addReq = h("input", { class: "input tnum", type: "number", min: "0", step: "any", placeholder: "0" });
+  const addNote = h("input", { class: "input", placeholder: "备注（可选）", maxlength: "120" });
+
+  const submitAdd = async () => {
+    const model = addModel.value.trim();
+    if (!model) { toast("请填写模型名称或规则", true); addModel.focus(); return; }
+    const body = {
+      model,
+      input: Math.max(0, Number(addIn.value) || 0),
+      cached: Math.max(0, Number(addCached.value) || 0),
+      output: Math.max(0, Number(addOut.value) || 0),
+      per_request: Math.max(0, Number(addReq.value) || 0),
+      note: addNote.value.trim(),
+    };
+    try {
+      await api("price/save", { method: "POST", body });
+      view.prefillPriceModel = "";
+      toast(`已保存价格：${model}`);
+      await loadState();
+      render();
+    } catch (e) { handleError(e); }
+  };
+
+  for (const inp of [addModel, addIn, addCached, addOut, addReq, addNote]) {
+    inp.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); submitAdd(); } });
+  }
+
+  // Unpriced models highlight box
+  const unpricedBox = (state.unpriced_models && state.unpriced_models.length)
+    ? h("div", { class: "notice warn-box" },
+        h("div", { style: { fontWeight: "600", color: "var(--warn-text)" } },
+          `${state.unpriced_models.length} 个已产生用量的模型未匹配到价格规则`
+        ),
+        h("div", { class: "hint", style: { marginTop: "2px" } },
+          "点击下方模型即可一键填入新增栏；设置后可点右上角「按当前价格重算历史」补算历史消费金额。"
+        ),
+        h("div", { class: "unpriced-list" },
+          state.unpriced_models.map((m) =>
+            h("span", { class: "unpriced-item" },
+              h("span", { class: "mono" }, m),
+              h("button", {
+                class: "btn small",
+                type: "button",
+                onClick: () => {
+                  addModel.value = m;
+                  addIn.focus();
+                  addModel.scrollIntoView({ behavior: "smooth", block: "center" });
+                }
+              }, "添加价格")
+            )
+          )
+        )
+      )
+    : null;
+
+  const recomputeBtn = h("button", {
+    class: "btn",
+    type: "button",
+    onClick: async () => {
+      if (!confirm("按当前价格重新计算全部历史金额？")) return;
+      recomputeBtn.disabled = true;
+      recomputeBtn.textContent = "重算中…";
+      try {
+        const r = await api("prices/recompute", { method: "POST", body: {} });
+        toast(`历史金额重算完成（更新 ${fmtInt.format(r.updated || 0)} 条）`);
+        await loadState();
+        if (state.usage) await loadUsage();
+        render();
+      } catch (e) {
+        recomputeBtn.disabled = false;
+        recomputeBtn.textContent = "按当前价格重算历史";
+        handleError(e);
+      }
+    }
+  }, "按当前价格重算历史");
+
+  const addBar = h("div", { class: "price-add-bar" },
+    h("label", { class: "field span-full" }, "模型 / 通配规则", addModel),
+    h("label", { class: "field" }, `输入 (${sym}/1M)`, addIn),
+    h("label", { class: "field" }, `缓存输入 (${sym}/1M)`, addCached),
+    h("label", { class: "field" }, `输出 (${sym}/1M)`, addOut),
+    h("label", { class: "field" }, `每次请求 (${sym})`, addReq),
+    h("label", { class: "field" }, "备注", addNote),
+    h("button", { class: "btn primary", type: "button", onClick: submitAdd }, "添加价格")
+  );
+
+  // Existing prices editable table
+  const priceRows = (state.prices || []).map((p) => {
+    const orig = {
+      model: p.model || "",
+      input: Number(p.input) || 0,
+      cached: Number(p.cached) || 0,
+      output: Number(p.output) || 0,
+      per_request: Number(p.per_request) || 0,
+      note: p.note || "",
+    };
+    const mIn = h("input", { class: "cell-in model-in", list: "known-models-list", value: orig.model });
+    const inIn = h("input", { class: "cell-in num-in", type: "number", min: "0", step: "any", value: String(orig.input) });
+    const caIn = h("input", { class: "cell-in num-in", type: "number", min: "0", step: "any", value: String(orig.cached) });
+    const outIn = h("input", { class: "cell-in num-in", type: "number", min: "0", step: "any", value: String(orig.output) });
+    const reqIn = h("input", { class: "cell-in num-in", type: "number", min: "0", step: "any", value: String(orig.per_request) });
+    const noteIn = h("input", { class: "cell-in note-in", value: orig.note, maxlength: "120", placeholder: "—" });
+    const saveBtn = h("button", { class: "btn small", type: "button", disabled: true }, "保存");
+    const tr = h("tr");
+
+    const checkDirty = () => {
+      const dirty =
+        mIn.value.trim() !== orig.model ||
+        (Number(inIn.value) || 0) !== orig.input ||
+        (Number(caIn.value) || 0) !== orig.cached ||
+        (Number(outIn.value) || 0) !== orig.output ||
+        (Number(reqIn.value) || 0) !== orig.per_request ||
+        noteIn.value.trim() !== orig.note;
+      tr.classList.toggle("dirty", dirty);
+      saveBtn.disabled = !dirty;
+      saveBtn.className = dirty ? "btn small primary" : "btn small";
+    };
+
+    const doSave = async () => {
+      const newModel = mIn.value.trim();
+      if (!newModel) { toast("模型名称不能为空", true); mIn.focus(); return; }
+      const body = {
+        model: newModel,
+        input: Math.max(0, Number(inIn.value) || 0),
+        cached: Math.max(0, Number(caIn.value) || 0),
+        output: Math.max(0, Number(outIn.value) || 0),
+        per_request: Math.max(0, Number(reqIn.value) || 0),
+        note: noteIn.value.trim(),
+      };
+      if (newModel !== orig.model) body.old_model = orig.model;
+      try {
+        await api("price/save", { method: "POST", body });
+        toast(`已更新价格：${newModel}`);
+        await loadState();
+        render();
+      } catch (e) { handleError(e); }
+    };
+
+    saveBtn.addEventListener("click", doSave);
+    for (const inp of [mIn, inIn, caIn, outIn, reqIn, noteIn]) {
+      inp.addEventListener("input", checkDirty);
+      inp.addEventListener("keydown", (e) => { if (e.key === "Enter" && !saveBtn.disabled) { e.preventDefault(); doSave(); } });
+    }
+
+    const delBtn = h("button", {
+      class: "btn small danger",
+      type: "button",
+      onClick: async () => {
+        if (!confirm(`删除价格规则「${orig.model}」？`)) return;
+        try {
+          await api("price/delete", { method: "POST", body: { model: orig.model } });
+          toast("已删除");
+          await loadState();
+          render();
+        } catch (e) { handleError(e); }
+      }
+    }, "删除");
+
+    tr.replaceChildren(
+      h("td", null, mIn),
+      h("td", { class: "num" }, inIn),
+      h("td", { class: "num" }, caIn),
+      h("td", { class: "num" }, outIn),
+      h("td", { class: "num" }, reqIn),
+      h("td", null, noteIn),
+      h("td", { class: "nowrap", style: { textAlign: "right" } },
+        h("div", { class: "row", style: { justifyContent: "flex-end", gap: "6px", flexWrap: "nowrap" } }, saveBtn, delBtn)
+      )
+    );
+    return tr;
+  });
+
+  const tableOrEmpty = priceRows.length
+    ? h("div", { class: "table-scroll" },
+        h("table", { class: "price-table" },
+          h("thead", null,
+            h("tr", null,
+              h("th", null, "模型 / 通配规则"),
+              h("th", { class: "num" }, `输入 (${sym}/1M)`),
+              h("th", { class: "num" }, `缓存输入 (${sym}/1M)`),
+              h("th", { class: "num" }, `输出 (${sym}/1M)`),
+              h("th", { class: "num" }, `每次请求 (${sym})`),
+              h("th", null, "备注"),
+              h("th", null, "")
+            )
+          ),
+          h("tbody", null, priceRows)
+        )
+      )
+    : h("div", { class: "empty" }, "还没有配置模型价格。在上方添加模型单价后，系统会按用量自动折算等价 API 消费金额。");
+
+  const card = h("section", { class: "card" },
+    h("div", { class: "card-head" },
+      h("h2", null, "模型价格"),
+      h("span", { class: "card-sub" }, `单位：${sym} / 1M Token（或每次成功请求） · 支持通配符如 gpt-5*`),
+      h("span", { class: "spacer" }),
+      recomputeBtn
+    ),
+    unpricedBox,
+    addBar,
+    tableOrEmpty,
+    h("p", { class: "hint", style: { marginBottom: "0" } },
+      "直接点击表格中的单元格即可编辑，回车或点「保存」生效。图片等按次计费模型可填写「每次请求」价格。"
+    )
+  );
+
+  main.replaceChildren(datalist, card);
+  if (view.prefillPriceModel) {
+    view.prefillPriceModel = "";
+    addIn.focus();
+  }
+}
+
+// ---------- tab 5: logs ----------
 function renderLogs() {
   const main = $("#main");
-  main.innerHTML = `
-    <section class="card">
-      <h2>请求记录
-        <span class="spacer"></span>
-        <select class="input" id="log-user"><option value="">全部用户</option>${state.users.map((u) => `<option value="${u.id}" ${String(u.id) === view.logUser ? "selected" : ""}>${esc(u.name)}</option>`).join("")}<option value="0" ${view.logUser === "0" ? "selected" : ""}>原生 Key / 其他</option></select>
-        <label class="check"><input type="checkbox" id="log-failed" ${view.logFailed ? "checked" : ""}> 只看失败</label>
-      </h2>
-      ${state.logs.length ? `<div class="table-scroll"><table><thead><tr><th>时间</th><th>用户</th><th>Key</th><th>模型</th><th>状态</th><th class="num">输入</th><th class="num">输出</th><th class="num">耗时</th><th class="num">首字</th></tr></thead><tbody>
-        ${state.logs.map((l) => `<tr title="${esc(l.error || "")}"><td style="white-space:nowrap">${new Date(l.ts * 1000).toLocaleString("zh-CN", { hour12: false })}</td>
-          <td>${esc(userLabel(l.user_id))}</td><td class="mono">${esc(keyById(l.key_id)?.name || keyById(l.key_id)?.hint || (l.key_id ? "#" + l.key_id : "—"))}</td>
-          <td class="mono">${esc(l.model)}</td>
-          <td>${l.failed ? `<span class="status bad">${l.status || "失败"}</span>` : `<span class="status">${l.status}</span>`}${l.stream ? ` <span class="faint">流式</span>` : ""}</td>
-          <td class="num">${fmtInt.format(l.input_tokens)}</td><td class="num">${fmtInt.format(l.output_tokens)}</td>
-          <td class="num">${(l.latency_ms / 1000).toFixed(1)}s</td><td class="num">${l.ttft_ms ? (l.ttft_ms / 1000).toFixed(1) + "s" : "—"}</td></tr>
-          ${l.failed && l.error ? `<tr><td></td><td colspan="8" class="hint mono" style="padding-top:0">${esc(l.error)}</td></tr>` : ""}`).join("")}
-      </tbody></table></div>` : `<div class="empty">没有记录。被插件拒绝（无权限 / 超额）的请求不会到达上游，也不会出现在这里。</div>`}
-      <p class="hint">最多显示最近 300 条；明细保留 ${state.config.log_retention || 30} 天，按小时汇总的数据永久保留。</p>
-    </section>`;
-  const reload = async () => { try { await loadLogs(); renderLogs(); } catch (e) { handleError(e); } };
-  $("#log-user").addEventListener("change", (e) => { view.logUser = e.target.value; reload(); });
-  $("#log-failed").addEventListener("change", (e) => { view.logFailed = e.target.checked; reload(); });
+
+  const userSelect = h("select", {
+    class: "input auto-w",
+    value: view.logUser,
+    onChange: async (e) => {
+      view.logUser = e.target.value;
+      try { await loadLogs(); renderLogs(); } catch (err) { handleError(err); }
+    }
+  },
+    h("option", { value: "" }, "全部用户"),
+    state.users.map((u) => h("option", { value: String(u.id), selected: String(u.id) === view.logUser }, u.name)),
+    h("option", { value: "0", selected: view.logUser === "0" }, "原生 Key / 其他")
+  );
+
+  const failedCheck = h("label", { class: "check" },
+    h("input", {
+      type: "checkbox",
+      checked: view.logFailed,
+      onChange: async (e) => {
+        view.logFailed = e.target.checked;
+        try { await loadLogs(); renderLogs(); } catch (err) { handleError(err); }
+      }
+    }),
+    "只看失败"
+  );
+
+  let content;
+  if (state.logs.length) {
+    const tbody = h("tbody");
+    for (const l of state.logs) {
+      const hasErr = Boolean(l.failed && l.error);
+      const keyInfo = keyById(l.key_id);
+      const keyText = keyInfo?.name || keyInfo?.hint || (l.key_id ? `#${l.key_id}` : "—");
+      const statusCell = h("td", { class: "nowrap" },
+        l.failed
+          ? h("span", { class: "status bad" }, String(l.status || "失败"))
+          : h("span", { class: "status" }, String(l.status || 200)),
+        l.stream ? h("span", { class: "faint", style: { marginLeft: "5px", fontSize: "12px" } }, "流式") : null
+      );
+
+      tbody.appendChild(h("tr", { class: hasErr ? "has-err" : "" },
+        h("td", { class: "nowrap" }, new Date(l.ts * 1000).toLocaleString("zh-CN", { hour12: false })),
+        h("td", { class: "nowrap" }, userLabel(l.user_id)),
+        h("td", { class: "mono nowrap" }, keyText),
+        h("td", { class: "mono" }, l.model || "—"),
+        statusCell,
+        h("td", { class: "num" }, fmtInt.format(l.input_tokens || 0)),
+        h("td", { class: "num" }, fmtInt.format(l.output_tokens || 0)),
+        h("td", { class: "num nowrap", style: { fontWeight: "500" } }, fmtMoney(l.cost || 0)),
+        h("td", { class: "num nowrap" }, `${((l.latency_ms || 0) / 1000).toFixed(1)}s`),
+        h("td", { class: "num nowrap" }, l.ttft_ms ? `${(l.ttft_ms / 1000).toFixed(1)}s` : "—")
+      ));
+
+      if (hasErr) {
+        // Security: upstream error text is attacker-controlled; render strictly via textContent.
+        tbody.appendChild(h("tr", { class: "sub-err" },
+          h("td", null),
+          h("td", { colspan: "9" }, h("div", { class: "err-box" }, l.error))
+        ));
+      }
+    }
+
+    content = h("div", { class: "table-scroll" },
+      h("table", null,
+        h("thead", null,
+          h("tr", null,
+            h("th", null, "时间"),
+            h("th", null, "用户"),
+            h("th", null, "Key"),
+            h("th", null, "模型"),
+            h("th", null, "状态"),
+            h("th", { class: "num" }, "输入"),
+            h("th", { class: "num" }, "输出"),
+            h("th", { class: "num" }, "金额"),
+            h("th", { class: "num" }, "耗时"),
+            h("th", { class: "num" }, "首字")
+          )
+        ),
+        tbody
+      )
+    );
+  } else {
+    content = h("div", { class: "empty" },
+      "没有记录。被插件拒绝（无权限 / 超额）的请求不会到达上游，也不会出现在这里。"
+    );
+  }
+
+  main.replaceChildren(
+    h("section", { class: "card" },
+      h("div", { class: "card-head" },
+        h("h2", null, "请求记录"),
+        h("span", { class: "spacer" }),
+        userSelect,
+        failedCheck
+      ),
+      content,
+      h("p", { class: "hint", style: { marginBottom: "0" } },
+        `最多显示最近 300 条；明细保留 ${state.config.log_retention || 30} 天，按小时汇总的数据永久保留。`
+      )
+    )
+  );
 }
 
 // ---------- login ----------
 function renderLogin(message) {
-  $("#app").innerHTML = `
-    <div class="login card">
-      <h2 style="font-size:17px">用户分发</h2>
-      <p class="muted" style="margin-top:0">输入 CPA 的管理密钥（remote-management.secret-key）。${document.documentElement.dataset.host === "cpamc" ? "在管理中心登录时勾选「记住密码」，以后打开这里就不用再输。" : document.documentElement.dataset.host === "frame" ? "在 Oh My CPA 中打开时会自动使用它保存的管理密钥；出现这个页面说明那个密钥没有被 CPA 接受。" : ""}</p>
-      ${message ? `<div class="notice">${esc(message)}</div>` : ""}
-      <form id="login-form" class="row"><input class="input" id="login-key" type="password" placeholder="管理密钥" autocomplete="current-password" style="flex:1" required><button class="btn primary">进入</button></form>
-    </div>`;
-  $("#login-form").addEventListener("submit", async (e) => {
-    e.preventDefault();
-    mgmtKey = $("#login-key").value.trim();
-    writeSessionKey(mgmtKey);
-    try { await loadState(); await loadUsage(); render(); } catch (err) { handleError(err); }
+  const host = document.documentElement.dataset.host;
+  const hostHint = host === "cpamc"
+    ? "在管理中心登录时勾选「记住密码」，以后打开这里就不用再输。"
+    : host === "frame"
+      ? "在 Oh My CPA 中打开时会自动使用它保存的管理密钥；出现这个页面说明那个密钥没有被 CPA 接受。"
+      : "";
+
+  const keyIn = h("input", {
+    class: "input",
+    type: "password",
+    placeholder: "管理密钥",
+    autocomplete: "current-password",
+    required: true,
+    style: { flex: "1" }
   });
+
+  const form = h("form", {
+    class: "row",
+    onSubmit: async (e) => {
+      e.preventDefault();
+      mgmtKey = keyIn.value.trim();
+      writeSessionKey(mgmtKey);
+      try {
+        await loadState();
+        await loadUsage();
+        render();
+        scheduleLive();
+      } catch (err) { handleError(err); }
+    }
+  }, keyIn, h("button", { class: "btn primary", type: "submit" }, "进入"));
+
+  $("#app").replaceChildren(
+    h("div", { class: "login card" },
+      h("h2", { style: { fontSize: "17px", margin: "0 0 8px" } }, "用户分发"),
+      h("p", { class: "muted", style: { marginTop: "0", fontSize: "13.5px" } },
+        `输入 CPA 的管理密钥（remote-management.secret-key）。${hostHint}`
+      ),
+      message ? h("div", { class: "notice" }, message) : null,
+      form
+    )
+  );
 }
 
+// ---------- startup ----------
 async function start() {
-  // Try the remembered key first, then no key (a host such as Oh My CPA may supply
-  // one server-side), and only then ask.
+  // Try remembered key first, then no key (Oh My CPA injects server-side), and only then ask.
   const attempts = mgmtKey ? [mgmtKey, ""] : [""];
   let lastAuthError = null;
   for (const key of attempts) {
@@ -806,6 +2474,7 @@ async function start() {
       await loadState();
       await loadUsage();
       render();
+      scheduleLive();
       return;
     } catch (e) {
       if (!(e instanceof AuthError)) { handleError(e); return; }

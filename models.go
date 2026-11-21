@@ -176,3 +176,64 @@ func (c modelCatalog) filter(keep func(id string) bool) ([]byte, int) {
 	out, _ := json.Marshal(fields)
 	return out, len(kept)
 }
+
+// ---- routes open to issued keys ----
+
+type routeKind int
+
+const (
+	routeDenied routeKind = iota
+	routeGenerate
+	routeCatalog
+	routeImages
+)
+
+// routeFor classifies a CPA endpoint for issued keys. Only endpoints whose
+// requests pass through request.intercept_before (model gate, quotas,
+// concurrency) are open. Everything else, such as alpha search, realtime,
+// live, tunnels, video and TTS, reaches shared credentials without that
+// check and is refused.
+func routeFor(method, path string) routeKind {
+	method = strings.ToUpper(strings.TrimSpace(method))
+	p := strings.TrimRight(strings.TrimSpace(path), "/")
+	if i := strings.IndexAny(p, "?#"); i >= 0 {
+		p = p[:i]
+	}
+	switch method {
+	case "GET":
+		switch {
+		case p == "/v1/models", strings.HasPrefix(p, "/v1/models/"), p == "/v1beta/models":
+			return routeCatalog
+		case strings.HasPrefix(p, "/v1beta/models/"):
+			return routeCatalog
+		case p == "/v1/responses", p == "/backend-api/codex/responses":
+			return routeGenerate // Responses WebSocket; every turn is intercepted
+		}
+	case "POST":
+		switch p {
+		case "/v1/chat/completions", "/v1/completions", "/v1/messages", "/v1/messages/count_tokens",
+			"/v1/responses", "/v1/responses/compact",
+			"/backend-api/codex/responses", "/backend-api/codex/responses/compact":
+			return routeGenerate
+		case "/v1/images/generations", "/v1/images/edits":
+			return routeImages
+		}
+		if strings.HasPrefix(p, "/v1beta/models/") {
+			return routeGenerate
+		}
+	}
+	return routeDenied
+}
+
+// imagesAllowed reports whether a user may call the image endpoints. CPA runs
+// Codex image requests through a text model with the image model as a tool
+// argument, so the model gate alone cannot tell image use apart; the user
+// needs an image model in their list.
+func imagesAllowed(patterns []string) bool {
+	for _, p := range patterns {
+		if p == "*" || strings.Contains(p, "image") {
+			return true
+		}
+	}
+	return false
+}

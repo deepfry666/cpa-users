@@ -19,11 +19,19 @@ var (
 
 // App owns the plugin's configuration, storage and in-memory state.
 type App struct {
+	// writeMu serialises management writes with the index reload that follows,
+	// so an older reload cannot publish over a newer one.
+	writeMu sync.Mutex
 	mu      sync.RWMutex
 	cfg     Config
 	store   *store
 	initErr string
 	state   *state
+
+	meLimit failLimiter
+	// acctMu orders usage accounting against counter reseeds so a reseed
+	// cannot drop usage recorded while it read the database.
+	acctMu sync.Mutex
 
 	stop    chan struct{}
 	started bool
@@ -168,11 +176,22 @@ func (a *App) reload() error {
 	if err != nil {
 		return err
 	}
+	prices, err := st.loadPrices()
+	if err != nil {
+		return err
+	}
 	a.state.rebuild(groups, users, keys)
+	a.state.setPrices(prices)
 	return nil
 }
 
 func (a *App) seedCounters() {
+	a.acctMu.Lock()
+	defer a.acctMu.Unlock()
+	a.seedCountersLocked()
+}
+
+func (a *App) seedCountersLocked() {
 	st := a.db()
 	if st == nil {
 		return
@@ -184,7 +203,12 @@ func (a *App) seedCounters() {
 		log.Printf("[%s] seed counters: %v", PluginID, err)
 		return
 	}
-	a.state.seedCounters(loc, now, rows)
+	totals, err := st.totalCost()
+	if err != nil {
+		log.Printf("[%s] seed totals: %v", PluginID, err)
+		return
+	}
+	a.state.seedCounters(loc, now, rows, totals)
 }
 
 func (a *App) markModelsDirty() {

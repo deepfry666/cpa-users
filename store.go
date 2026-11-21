@@ -36,7 +36,13 @@ type User struct {
 	DailyRequests   int64    `json:"daily_requests"`
 	MonthlyRequests int64    `json:"monthly_requests"`
 	MaxConcurrency  int      `json:"max_concurrency"`
-	CreatedAt       int64    `json:"created_at"`
+	// Spend limits in the configured currency; zero means unlimited.
+	DailyCostLimit   float64 `json:"daily_cost_limit"`
+	MonthlyCostLimit float64 `json:"monthly_cost_limit"`
+	TotalCostLimit   float64 `json:"total_cost_limit"`
+	// RPMLimit caps admitted requests per rolling minute; zero means unlimited.
+	RPMLimit  int   `json:"rpm_limit"`
+	CreatedAt int64 `json:"created_at"`
 }
 
 // Key is an issued downstream credential. Only its SHA-256 is stored.
@@ -60,6 +66,7 @@ type usageRow struct {
 	Status                            int
 	Input, Output, Reasoning, Cached  int64
 	Total, LatencyMs, TTFTMs          int64
+	CostMicros                        int64
 }
 
 // hourlyRow is one aggregated hour bucket.
@@ -70,25 +77,27 @@ type hourlyRow struct {
 	Requests, Failed                 int64
 	Input, Output, Reasoning, Cached int64
 	Total                            int64
+	CostMicros                       int64
 }
 
 // LogEntry is a per-request record shown in the console.
 type LogEntry struct {
-	ID        int64  `json:"id"`
-	TS        int64  `json:"ts"`
-	UserID    int64  `json:"user_id"`
-	KeyID     int64  `json:"key_id"`
-	Model     string `json:"model"`
-	Provider  string `json:"provider"`
-	Stream    bool   `json:"stream"`
-	Failed    bool   `json:"failed"`
-	Status    int    `json:"status"`
-	Input     int64  `json:"input_tokens"`
-	Output    int64  `json:"output_tokens"`
-	Total     int64  `json:"total_tokens"`
-	LatencyMs int64  `json:"latency_ms"`
-	TTFTMs    int64  `json:"ttft_ms"`
-	Error     string `json:"error,omitempty"`
+	ID        int64   `json:"id"`
+	TS        int64   `json:"ts"`
+	UserID    int64   `json:"user_id"`
+	KeyID     int64   `json:"key_id"`
+	Model     string  `json:"model"`
+	Provider  string  `json:"provider"`
+	Stream    bool    `json:"stream"`
+	Failed    bool    `json:"failed"`
+	Status    int     `json:"status"`
+	Input     int64   `json:"input_tokens"`
+	Output    int64   `json:"output_tokens"`
+	Total     int64   `json:"total_tokens"`
+	LatencyMs int64   `json:"latency_ms"`
+	TTFTMs    int64   `json:"ttft_ms"`
+	Cost      float64 `json:"cost"`
+	Error     string  `json:"error,omitempty"`
 }
 
 type store struct {
@@ -162,6 +171,15 @@ CREATE TABLE IF NOT EXISTS request_log (
 );
 CREATE INDEX IF NOT EXISTS request_log_ts ON request_log (ts);
 CREATE INDEX IF NOT EXISTS request_log_user_ts ON request_log (user_id, ts);
+CREATE TABLE IF NOT EXISTS prices (
+	model TEXT PRIMARY KEY,
+	input REAL NOT NULL DEFAULT 0,
+	cached REAL NOT NULL DEFAULT 0,
+	output REAL NOT NULL DEFAULT 0,
+	per_request REAL NOT NULL DEFAULT 0,
+	note TEXT NOT NULL DEFAULT '',
+	updated_at INTEGER NOT NULL DEFAULT 0
+);
 CREATE TABLE IF NOT EXISTS meta (
 	k TEXT PRIMARY KEY,
 	v TEXT NOT NULL
@@ -184,7 +202,59 @@ func openStore(path string) (*store, error) {
 		db.Close()
 		return nil, fmt.Errorf("migrate %s: %w", path, err)
 	}
-	return &store{db: db}, nil
+	st := &store{db: db}
+	if err := st.migrate(); err != nil {
+		db.Close()
+		return nil, fmt.Errorf("migrate %s: %w", path, err)
+	}
+	return st, nil
+}
+
+// migrate adds columns introduced after v0.1.0 to existing databases.
+func (s *store) migrate() error {
+	cols := []struct{ table, name, def string }{
+		{"users", "daily_cost_limit", "REAL NOT NULL DEFAULT 0"},
+		{"users", "monthly_cost_limit", "REAL NOT NULL DEFAULT 0"},
+		{"users", "total_cost_limit", "REAL NOT NULL DEFAULT 0"},
+		{"users", "rpm_limit", "INTEGER NOT NULL DEFAULT 0"},
+		{"usage_hourly", "cost_micros", "INTEGER NOT NULL DEFAULT 0"},
+		{"request_log", "cost_micros", "INTEGER NOT NULL DEFAULT 0"},
+		{"request_log", "cached_tokens", "INTEGER NOT NULL DEFAULT 0"},
+		{"request_log", "reasoning_tokens", "INTEGER NOT NULL DEFAULT 0"},
+	}
+	for _, c := range cols {
+		has, err := s.hasColumn(c.table, c.name)
+		if err != nil {
+			return err
+		}
+		if has {
+			continue
+		}
+		if _, err := s.db.Exec(fmt.Sprintf("ALTER TABLE %s ADD COLUMN %s %s", c.table, c.name, c.def)); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *store) hasColumn(table, column string) (bool, error) {
+	rows, err := s.db.Query(fmt.Sprintf("PRAGMA table_info(%s)", table))
+	if err != nil {
+		return false, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var cid, notNull, pk int
+		var name, typ string
+		var def sql.NullString
+		if err := rows.Scan(&cid, &name, &typ, &notNull, &def, &pk); err != nil {
+			return false, err
+		}
+		if strings.EqualFold(name, column) {
+			return true, nil
+		}
+	}
+	return false, rows.Err()
 }
 
 func (s *store) close() error {
@@ -236,7 +306,8 @@ func (s *store) loadAll() ([]Group, []User, []Key, error) {
 
 	var users []User
 	rows, err = s.db.Query(`SELECT id, name, note, group_id, extra_models, disabled, expires_at, daily_tokens,
-		monthly_tokens, daily_requests, monthly_requests, max_concurrency, created_at FROM users ORDER BY id`)
+		monthly_tokens, daily_requests, monthly_requests, max_concurrency, daily_cost_limit, monthly_cost_limit,
+		total_cost_limit, rpm_limit, created_at FROM users ORDER BY id`)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -245,7 +316,8 @@ func (s *store) loadAll() ([]Group, []User, []Key, error) {
 		var extra string
 		var disabled int
 		if err := rows.Scan(&u.ID, &u.Name, &u.Note, &u.GroupID, &extra, &disabled, &u.ExpiresAt, &u.DailyTokens,
-			&u.MonthlyTokens, &u.DailyRequests, &u.MonthlyRequests, &u.MaxConcurrency, &u.CreatedAt); err != nil {
+			&u.MonthlyTokens, &u.DailyRequests, &u.MonthlyRequests, &u.MaxConcurrency, &u.DailyCostLimit, &u.MonthlyCostLimit,
+			&u.TotalCostLimit, &u.RPMLimit, &u.CreatedAt); err != nil {
 			rows.Close()
 			return nil, nil, nil, err
 		}
@@ -323,21 +395,33 @@ func (s *store) deleteGroup(id int64) error {
 
 func (s *store) saveUser(u User) (int64, error) {
 	args := []any{u.Name, u.Note, u.GroupID, encodeList(u.ExtraModels), boolInt(u.Disabled), u.ExpiresAt,
-		u.DailyTokens, u.MonthlyTokens, u.DailyRequests, u.MonthlyRequests, u.MaxConcurrency}
+		u.DailyTokens, u.MonthlyTokens, u.DailyRequests, u.MonthlyRequests, u.MaxConcurrency,
+		u.DailyCostLimit, u.MonthlyCostLimit, u.TotalCostLimit, u.RPMLimit}
 	if u.ID == 0 {
-		res, err := s.db.Exec(`INSERT INTO users (name, note, group_id, extra_models, disabled, expires_at, daily_tokens,
-			monthly_tokens, daily_requests, monthly_requests, max_concurrency, created_at)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, append(args, time.Now().Unix())...)
+		tx, err := s.db.Begin()
+		if err != nil {
+			return 0, err
+		}
+		defer tx.Rollback()
+		id, err := nextID(tx, "users")
+		if err != nil {
+			return 0, err
+		}
+		_, err = tx.Exec(`INSERT INTO users (id, name, note, group_id, extra_models, disabled, expires_at, daily_tokens,
+			monthly_tokens, daily_requests, monthly_requests, max_concurrency, daily_cost_limit, monthly_cost_limit,
+			total_cost_limit, rpm_limit, created_at)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, append(append([]any{id}, args...), time.Now().Unix())...)
 		if isUniqueViolation(err) {
 			return 0, errDuplicateName
 		}
 		if err != nil {
 			return 0, err
 		}
-		return res.LastInsertId()
+		return id, tx.Commit()
 	}
 	res, err := s.db.Exec(`UPDATE users SET name = ?, note = ?, group_id = ?, extra_models = ?, disabled = ?, expires_at = ?,
-		daily_tokens = ?, monthly_tokens = ?, daily_requests = ?, monthly_requests = ?, max_concurrency = ?
+		daily_tokens = ?, monthly_tokens = ?, daily_requests = ?, monthly_requests = ?, max_concurrency = ?,
+		daily_cost_limit = ?, monthly_cost_limit = ?, total_cost_limit = ?, rpm_limit = ?
 		WHERE id = ?`, append(args, u.ID)...)
 	if isUniqueViolation(err) {
 		return 0, errDuplicateName
@@ -369,12 +453,45 @@ func (s *store) deleteUser(id int64) error {
 }
 
 func (s *store) createKey(userID int64, name, hash, hint string) (int64, error) {
-	res, err := s.db.Exec(`INSERT INTO keys (user_id, name, hash, hint, created_at) VALUES (?, ?, ?, ?, ?)`,
-		userID, name, hash, hint, time.Now().Unix())
+	tx, err := s.db.Begin()
 	if err != nil {
 		return 0, err
 	}
-	return res.LastInsertId()
+	defer tx.Rollback()
+	id, err := nextID(tx, "keys")
+	if err != nil {
+		return 0, err
+	}
+	if _, err := tx.Exec(`INSERT INTO keys (id, user_id, name, hash, hint, created_at) VALUES (?, ?, ?, ?, ?, ?)`,
+		id, userID, name, hash, hint, time.Now().Unix()); err != nil {
+		return 0, err
+	}
+	return id, tx.Commit()
+}
+
+// nextID hands out user and key IDs that are never reused. SQLite's rowid
+// reuses the highest ID after a delete, and usage history is keyed by these
+// IDs, so a new user would otherwise inherit a deleted user's usage.
+func nextID(tx *sql.Tx, table string) (int64, error) {
+	col := map[string]string{"users": "user_id", "keys": "key_id"}[table]
+	if col == "" {
+		return 0, fmt.Errorf("nextID: unknown table %s", table)
+	}
+	seqKey := "seq_" + table
+	var id int64
+	err := tx.QueryRow(fmt.Sprintf(`SELECT 1 + MAX(
+		(SELECT COALESCE(MAX(id), 0) FROM %[1]s),
+		(SELECT COALESCE(MAX(%[2]s), 0) FROM usage_hourly),
+		(SELECT COALESCE(MAX(%[2]s), 0) FROM request_log),
+		(SELECT COALESCE(MAX(CAST(v AS INTEGER)), 0) FROM meta WHERE k = ?))`, table, col), seqKey).Scan(&id)
+	if err != nil {
+		return 0, err
+	}
+	if _, err := tx.Exec(`INSERT INTO meta (k, v) VALUES (?, ?) ON CONFLICT (k) DO UPDATE SET v = excluded.v`,
+		seqKey, fmt.Sprint(id)); err != nil {
+		return 0, err
+	}
+	return id, nil
 }
 
 func (s *store) updateKey(id int64, name string, disabled bool) error {
@@ -419,7 +536,7 @@ func (s *store) recordUsage(r usageRow) error {
 	}
 	defer tx.Rollback()
 	if _, err := tx.Exec(`INSERT INTO usage_hourly (hour, user_id, key_id, model, requests, failed, input_tokens,
-		output_tokens, reasoning_tokens, cached_tokens, total_tokens) VALUES (?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?)
+		output_tokens, reasoning_tokens, cached_tokens, total_tokens, cost_micros) VALUES (?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?)
 		ON CONFLICT (hour, user_id, key_id, model) DO UPDATE SET
 			requests = requests + 1,
 			failed = failed + excluded.failed,
@@ -427,15 +544,16 @@ func (s *store) recordUsage(r usageRow) error {
 			output_tokens = output_tokens + excluded.output_tokens,
 			reasoning_tokens = reasoning_tokens + excluded.reasoning_tokens,
 			cached_tokens = cached_tokens + excluded.cached_tokens,
-			total_tokens = total_tokens + excluded.total_tokens`,
-		hour, r.UserID, r.KeyID, r.Model, failed, r.Input, r.Output, r.Reasoning, r.Cached, r.Total); err != nil {
+			total_tokens = total_tokens + excluded.total_tokens,
+			cost_micros = cost_micros + excluded.cost_micros`,
+		hour, r.UserID, r.KeyID, r.Model, failed, r.Input, r.Output, r.Reasoning, r.Cached, r.Total, r.CostMicros); err != nil {
 		return err
 	}
 	if _, err := tx.Exec(`INSERT INTO request_log (ts, request_id, user_id, key_id, model, provider, stream, failed, status,
-		input_tokens, output_tokens, total_tokens, latency_ms, ttft_ms, error)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		input_tokens, output_tokens, total_tokens, latency_ms, ttft_ms, error, cost_micros, cached_tokens, reasoning_tokens)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		r.At.Unix(), r.RequestID, r.UserID, r.KeyID, r.Model, r.Provider, boolInt(r.Stream), failed, r.Status,
-		r.Input, r.Output, r.Total, r.LatencyMs, r.TTFTMs, r.Error); err != nil {
+		r.Input, r.Output, r.Total, r.LatencyMs, r.TTFTMs, r.Error, r.CostMicros, r.Cached, r.Reasoning); err != nil {
 		return err
 	}
 	return tx.Commit()
@@ -444,7 +562,7 @@ func (s *store) recordUsage(r usageRow) error {
 // hourly returns hour buckets in [from, to).
 func (s *store) hourly(from, to time.Time, userID int64) ([]hourlyRow, error) {
 	query := `SELECT hour, user_id, key_id, model, requests, failed, input_tokens, output_tokens, reasoning_tokens,
-		cached_tokens, total_tokens FROM usage_hourly WHERE hour >= ? AND hour < ?`
+		cached_tokens, total_tokens, cost_micros FROM usage_hourly WHERE hour >= ? AND hour < ?`
 	args := []any{from.UTC().Truncate(time.Hour).Unix(), to.Unix()}
 	if userID != 0 {
 		query += ` AND user_id = ?`
@@ -459,7 +577,7 @@ func (s *store) hourly(from, to time.Time, userID int64) ([]hourlyRow, error) {
 	for rows.Next() {
 		var r hourlyRow
 		if err := rows.Scan(&r.Hour, &r.UserID, &r.KeyID, &r.Model, &r.Requests, &r.Failed, &r.Input, &r.Output,
-			&r.Reasoning, &r.Cached, &r.Total); err != nil {
+			&r.Reasoning, &r.Cached, &r.Total, &r.CostMicros); err != nil {
 			return nil, err
 		}
 		out = append(out, r)
@@ -472,7 +590,7 @@ func (s *store) logs(limit int, userID int64, failedOnly bool) ([]LogEntry, erro
 		limit = 200
 	}
 	query := `SELECT id, ts, user_id, key_id, model, provider, stream, failed, status, input_tokens, output_tokens,
-		total_tokens, latency_ms, ttft_ms, error FROM request_log WHERE 1 = 1`
+		total_tokens, latency_ms, ttft_ms, error, cost_micros FROM request_log WHERE 1 = 1`
 	var args []any
 	if userID != 0 {
 		query += ` AND user_id = ?`
@@ -492,10 +610,12 @@ func (s *store) logs(limit int, userID int64, failedOnly bool) ([]LogEntry, erro
 	for rows.Next() {
 		var e LogEntry
 		var stream, failed int
+		var cost int64
 		if err := rows.Scan(&e.ID, &e.TS, &e.UserID, &e.KeyID, &e.Model, &e.Provider, &stream, &failed, &e.Status,
-			&e.Input, &e.Output, &e.Total, &e.LatencyMs, &e.TTFTMs, &e.Error); err != nil {
+			&e.Input, &e.Output, &e.Total, &e.LatencyMs, &e.TTFTMs, &e.Error, &cost); err != nil {
 			return nil, err
 		}
+		e.Cost = microsToMoney(cost)
 		e.Stream, e.Failed = stream != 0, failed != 0
 		out = append(out, e)
 	}

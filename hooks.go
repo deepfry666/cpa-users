@@ -63,6 +63,20 @@ func (a *App) authenticate(payload []byte) ([]byte, error) {
 	if reason := userBlocked(u, time.Now()); reason != "" {
 		return okEnvelope(frontendAuthResponse{DenyStatusCode: http.StatusForbidden, DenyMessage: reason})
 	}
+	switch routeFor(req.Method, req.Path) {
+	case routeDenied:
+		return okEnvelope(frontendAuthResponse{DenyStatusCode: http.StatusForbidden, DenyMessage: "此接口不对分发的 Key 开放"})
+	case routeImages:
+		if !imagesAllowed(a.state.patterns(u.ID)) {
+			return okEnvelope(frontendAuthResponse{DenyStatusCode: http.StatusForbidden, DenyMessage: "当前账号未开通生图"})
+		}
+	case routeCatalog:
+		// The catalog filter only sees request headers, so a key passed as a
+		// query parameter would get the full, unfiltered list.
+		if headerKey := extractKey(req.Headers, nil); headerKey != key {
+			return okEnvelope(frontendAuthResponse{DenyStatusCode: http.StatusBadRequest, DenyMessage: "请通过请求头传递 API Key"})
+		}
+	}
 	return okEnvelope(frontendAuthResponse{
 		Authenticated: true,
 		Principal:     principalFor(u.ID, k.ID),
@@ -94,6 +108,10 @@ func (a *App) interceptBefore(payload []byte) ([]byte, error) {
 	}
 	keyID, ok := a.state.keyByScope(scope)
 	if !ok {
+		if a.state.revokedScope(scope) {
+			// Authenticated before the key was deleted; do not let it through unmetered.
+			return okEnvelope(refuse(req.SourceFormat, http.StatusUnauthorized, "invalid_api_key", "API Key 已删除", time.Time{}))
+		}
 		return okEnvelope(pass) // native CPA key or anonymous: not ours
 	}
 	now := time.Now()
@@ -105,25 +123,38 @@ func (a *App) interceptBefore(payload []byte) ([]byte, error) {
 		return okEnvelope(refuse(req.SourceFormat, http.StatusForbidden, "account_unavailable", reason, time.Time{}))
 	}
 
-	model := req.RequestedModel
-	if model == "" {
-		model = req.Model
+	// Both the requested name and the resolved one must be allowed, so an
+	// allowed alias cannot reach a model outside the list. Requests without
+	// any model name are refused rather than guessed at.
+	patterns := a.state.patterns(u.ID)
+	names := []string{}
+	for _, m := range []string{req.RequestedModel, req.Model} {
+		if strings.TrimSpace(m) != "" {
+			names = append(names, m)
+		}
 	}
-	if model != "" && !modelAllowed(a.state.patterns(u.ID), model) {
-		msg := fmt.Sprintf("当前账号（%s）无权使用模型 %s", u.Name, model)
-		return okEnvelope(refuse(req.SourceFormat, http.StatusForbidden, "model_not_allowed", msg, time.Time{}))
+	if len(names) == 0 {
+		return okEnvelope(refuse(req.SourceFormat, http.StatusBadRequest, "model_required", "请求里没有指定模型", time.Time{}))
+	}
+	for _, m := range names {
+		if !modelAllowed(patterns, m) {
+			msg := fmt.Sprintf("当前账号（%s）无权使用模型 %s", u.Name, m)
+			return okEnvelope(refuse(req.SourceFormat, http.StatusForbidden, "model_not_allowed", msg, time.Time{}))
+		}
 	}
 
-	// count_tokens and similar probes do not generate and are not metered.
-	if generate, ok := req.Metadata[metaGenerate].(bool); ok && !generate {
-		return okEnvelope(pass)
-	}
+	// The generate flag comes from the client's JSON, so it is not trusted:
+	// every request is checked against quotas, concurrency and RPM.
 	if reason, reset := quotaExceeded(u, a.state.quota(u.ID, now)); reason != "" {
 		return okEnvelope(refuse(req.SourceFormat, http.StatusTooManyRequests, "quota_exceeded", reason, reset))
 	}
-	if !a.state.acquire(req.RequestID, u.ID, u.MaxConcurrency, now) {
+	switch res, retryAt := a.state.acquire(req.RequestID, u.ID, u.MaxConcurrency, u.RPMLimit, now); res {
+	case deniedConcurrency:
 		msg := fmt.Sprintf("并发请求已达上限（%d）", u.MaxConcurrency)
-		return okEnvelope(refuse(req.SourceFormat, http.StatusTooManyRequests, "concurrency_limit", msg, now.Add(2*time.Second)))
+		return okEnvelope(refuse(req.SourceFormat, http.StatusTooManyRequests, "concurrency_limit", msg, retryAt))
+	case deniedRPM:
+		msg := fmt.Sprintf("每分钟请求次数已达上限（%d）", u.RPMLimit)
+		return okEnvelope(refuse(req.SourceFormat, http.StatusTooManyRequests, "rate_limit", msg, retryAt))
 	}
 	return okEnvelope(pass)
 }
@@ -251,6 +282,10 @@ func (a *App) handleUsage(payload []byte) ([]byte, error) {
 	if !rec.Generate && !rec.Failed && rec.Detail.TotalTokens == 0 && rec.Detail.InputTokens == 0 {
 		return okEnvelope(map[string]any{})
 	}
+	// Recomputing costs reseeds the counters; hold it off while this record
+	// moves both the counters and the database.
+	a.acctMu.Lock()
+	defer a.acctMu.Unlock()
 	userID, keyID, _ := parsePrincipal(rec.APIKey) // 0/0 = native key or anonymous
 	model := rec.Alias
 	if model == "" {
@@ -260,16 +295,19 @@ func (a *App) handleUsage(payload []byte) ([]byte, error) {
 	if at.IsZero() {
 		at = time.Now()
 	}
-	d := rec.Detail
-	total := d.TotalTokens
-	if total == 0 {
-		total = d.InputTokens + d.OutputTokens
-	}
+	tu := normalizeUsage(rec.Detail)
+	total := tu.Total
 	row := usageRow{
 		At: at, UserID: userID, KeyID: keyID, Model: model, Provider: rec.Provider, RequestID: rec.RequestID,
 		Stream: rec.Stream, Failed: rec.Failed, Status: rec.Failure.StatusCode,
-		Input: d.InputTokens, Output: d.OutputTokens, Reasoning: d.ReasoningTokens, Cached: d.CachedTokens, Total: total,
+		Input: tu.Input, Output: tu.Output, Reasoning: tu.Reasoning, Cached: tu.Cached, Total: total,
 		LatencyMs: rec.Latency.Milliseconds(), TTFTMs: rec.TTFT.Milliseconds(),
+	}
+	if !rec.Failed {
+		tu.Successes = 1
+	}
+	if p, ok := a.state.priceFor(model, rec.Model); ok {
+		row.CostMicros = costMicros(p, tu)
 	}
 	if rec.Failed {
 		row.Error = truncate(rec.Failure.Body, 300)
@@ -279,12 +317,13 @@ func (a *App) handleUsage(payload []byte) ([]byte, error) {
 	} else {
 		row.Status = http.StatusOK
 	}
+	// Counters move first so a storage error cannot hand out free usage.
+	if userID != 0 {
+		a.state.addUsage(userID, at, total, row.CostMicros)
+		a.state.touch(keyID, at)
+	}
 	if err := st.recordUsage(row); err != nil {
 		return nil, fmt.Errorf("record usage: %w", err)
-	}
-	if userID != 0 {
-		a.state.addUsage(userID, at, total, !rec.Failed)
-		a.state.touch(keyID, at)
 	}
 	if !rec.Failed && a.state.noteModels(model) {
 		a.markModelsDirty()
