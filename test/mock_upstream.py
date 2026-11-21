@@ -11,6 +11,16 @@ class H(BaseHTTPRequestHandler):
         self.send_response(code); self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(raw))); self.end_headers(); self.wfile.write(raw)
     def do_GET(self):
+        if self.path == "/litellm.json":
+            return self._json(200, {"deepseek-v4-flash": {"litellm_provider": "deepseek", "input_cost_per_token": 3e-07,
+                                    "output_cost_per_token": 1.2e-06, "cache_read_input_token_cost": 3e-08},
+                                    "azure/claude-opus-x": {"litellm_provider": "azure", "input_cost_per_token": 1}})
+        if self.path == "/openrouter.json":
+            return self._json(200, {"data": [{"id": "anthropic/claude-opus-x"}]})
+        if self.path == "/openrouter.json/anthropic/claude-opus-x/endpoints":
+            return self._json(200, {"data": {"endpoints": [
+                {"tag": "some-host", "pricing": {"prompt": "0.000001", "completion": "0.000001"}},
+                {"tag": "anthropic", "pricing": {"prompt": "0.000015", "completion": "0.000075", "input_cache_read": "0.0000015"}}]}})
         if self.path.endswith("/models"):
             return self._json(200, {"object": "list", "data": [{"id": m, "object": "model", "owned_by": "mock"} for m in MODELS]})
         self._json(404, {"error": "nf"})

@@ -259,7 +259,7 @@ func newHarness(t *testing.T) *harness {
 	t.Helper()
 	a := newApp()
 	db := filepath.Join(t.TempDir(), "t.db")
-	cfg := "enabled: true\ndb_path: " + db + "\ntimezone: Asia/Shanghai\n"
+	cfg := "enabled: true\ndb_path: " + db + "\ntimezone: Asia/Shanghai\nprice_sync: false\n"
 	raw, _ := json.Marshal(lifecycleRequest{ConfigYAML: []byte(cfg)})
 	h := &harness{t: t, app: a}
 	var reg registration
@@ -576,9 +576,12 @@ func TestCostEndToEnd(t *testing.T) {
 		t.Fatalf("usage cost: %v", rep["totals"])
 	}
 
-	// Price changes apply to history only on request.
-	h.mgmt("POST", "price/save", map[string]any{"model": "deepseek*", "input": 1})
-	if s, r := h.mgmt("POST", "prices/recompute", map[string]any{}); s != 200 || r["updated"].(float64) != 1 {
+	// Pricing a model that had no price fills in its history right away.
+	if _, r := h.mgmt("POST", "price/save", map[string]any{"model": "deepseek*", "input": 1}); len(r["backfilled_models"].([]any)) != 1 {
+		t.Fatalf("manual price backfill: %v", r)
+	}
+	// Recompute with unchanged prices has nothing left to change.
+	if s, r := h.mgmt("POST", "prices/recompute", map[string]any{}); s != 200 || r["updated"].(float64) != 0 {
 		t.Fatalf("recompute: %d %v", s, r)
 	}
 	_, st = h.mgmt("GET", "state", nil)

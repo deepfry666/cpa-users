@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"crypto/rand"
 	"database/sql"
 	_ "embed"
@@ -48,6 +49,8 @@ var managementRoutes = []route{
 	{http.MethodPost, "price/save", "新建或修改模型价格", (*App).apiSavePrice},
 	{http.MethodPost, "price/delete", "删除模型价格", (*App).apiDeletePrice},
 	{http.MethodPost, "prices/recompute", "按当前价格重算历史金额", (*App).apiRecomputeCosts},
+	{http.MethodPost, "prices/sync", "从 LiteLLM / OpenRouter 同步官方价格", (*App).apiSyncPrices},
+	{http.MethodPost, "price/auto", "手动价格改回官方价格", (*App).apiRevertPrice},
 }
 
 func (a *App) managementRegistration() managementRegistrationResponse {
@@ -87,7 +90,9 @@ func (a *App) handleAPI(req managementRequest, path string) managementResponse {
 			if a.db() == nil && path != "state" {
 				return jsonError(http.StatusServiceUnavailable, "插件存储不可用："+a.storageError())
 			}
-			if r.method == http.MethodPost {
+			// Price sync takes the write lock itself only around the reload,
+			// so a slow download does not block other admin writes.
+			if r.method == http.MethodPost && path != "prices/sync" && path != "price/auto" {
 				a.writeMu.Lock()
 				defer a.writeMu.Unlock()
 			}
@@ -217,6 +222,7 @@ func (a *App) apiState(_ managementRequest) managementResponse {
 		"models":          a.state.knownModels(),
 		"prices":          prices.rows,
 		"unpriced_models": unpriced,
+		"price_sync":      a.priceSyncView(),
 		"running_total":   runningTotal,
 		"now":             now.Unix(),
 		"timezone":        cfg.Timezone,
@@ -227,6 +233,7 @@ func (a *App) apiState(_ managementRequest) managementResponse {
 			"log_retention":     cfg.LogRetentionDays,
 			"public_base_url":   cfg.PublicBaseURL,
 			"currency_symbol":   cfg.CurrencySymbol,
+			"price_sync_hours":  cfg.PriceSyncHours,
 		},
 	})
 }
@@ -653,6 +660,7 @@ func (a *App) apiSavePrice(req managementRequest) managementResponse {
 		return jsonError(http.StatusBadRequest, err.Error())
 	}
 	p := body.Price
+	p.Source = sourceManual // anything saved from the console is the owner's price
 	p.Model = strings.ToLower(strings.TrimSpace(strings.TrimPrefix(strings.TrimSpace(p.Model), "models/")))
 	p.Note = strings.TrimSpace(p.Note)
 	if p.Model == "" || len(p.Model) > 200 {
@@ -666,10 +674,43 @@ func (a *App) apiSavePrice(req managementRequest) managementResponse {
 			return jsonError(http.StatusBadRequest, errBadPrice.Error())
 		}
 	}
-	if err := a.db().savePrice(p, strings.TrimSpace(body.OldModel)); err != nil {
+	// The route holds writeMu; acctMu keeps usage accounting out until the
+	// price and the history it fills in are committed together.
+	a.acctMu.Lock()
+	defer a.acctMu.Unlock()
+	st := a.db()
+	before := a.state.priceTable()
+	tx, err := st.db.Begin()
+	if err != nil {
+		return jsonError(http.StatusInternalServerError, err.Error())
+	}
+	defer tx.Rollback()
+	if err := savePriceIn(tx, p, strings.TrimSpace(body.OldModel)); err != nil {
+		if isUniqueViolation(err) {
+			return saveError(errDuplicateName)
+		}
 		return saveError(err)
 	}
-	return a.afterWrite(map[string]any{"ok": true})
+	rows, err := loadPricesFrom(tx)
+	if err != nil {
+		return jsonError(http.StatusInternalServerError, err.Error())
+	}
+	after := newPriceTable(rows)
+	filled, err := newlyPriced(tx, before, after)
+	if err == nil && len(filled) > 0 {
+		err = backfillCosts(tx, after, filled)
+	}
+	if err != nil {
+		return jsonError(http.StatusInternalServerError, "保存失败（补算历史金额出错，价格未改动）："+err.Error())
+	}
+	if err := tx.Commit(); err != nil {
+		return jsonError(http.StatusInternalServerError, err.Error())
+	}
+	if err := a.reload(); err != nil {
+		return jsonError(http.StatusInternalServerError, "已保存，但刷新内存索引失败："+err.Error())
+	}
+	a.seedCountersLocked()
+	return jsonResponse(http.StatusOK, map[string]any{"ok": true, "backfilled_models": filled})
 }
 
 func (a *App) apiDeletePrice(req managementRequest) managementResponse {
@@ -761,4 +802,66 @@ func (l *failLimiter) fail(addr string, now time.Time) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	l.bucket(addr, now).failure++
+}
+
+func (a *App) priceSyncView() SyncStatus {
+	s := a.syncer.snapshot()
+	cfg := a.config()
+	s.Enabled = cfg.priceSync()
+	if s.Enabled && s.NextAt == 0 && s.LastAt > 0 {
+		s.NextAt = time.Unix(s.LastAt, 0).Add(cfg.syncInterval()).Unix()
+	}
+	if s.Unmatched == nil {
+		s.Unmatched = []string{}
+	}
+	return s
+}
+
+func (a *App) apiSyncPrices(_ managementRequest) managementResponse {
+	if !a.beginOp() {
+		return jsonError(http.StatusServiceUnavailable, "插件正在关闭")
+	}
+	defer a.endOp()
+	ctx, cancel := context.WithTimeout(a.backgroundContext(), 5*time.Minute)
+	defer cancel()
+	status, err := a.syncPrices(ctx)
+	if err != nil {
+		return jsonError(http.StatusBadGateway, err.Error())
+	}
+	return jsonResponse(http.StatusOK, a.priceSyncViewFrom(status))
+}
+
+// apiRevertPrice swaps a manual price for the official one in one step; the
+// manual price stays when no official price exists.
+func (a *App) apiRevertPrice(req managementRequest) managementResponse {
+	var body struct {
+		Model string `json:"model"`
+	}
+	if err := decodeBody(req, &body); err != nil || strings.TrimSpace(body.Model) == "" {
+		return jsonError(http.StatusBadRequest, "缺少模型名")
+	}
+	if !a.beginOp() {
+		return jsonError(http.StatusServiceUnavailable, "插件正在关闭")
+	}
+	defer a.endOp()
+	ctx, cancel := context.WithTimeout(a.backgroundContext(), 2*time.Minute)
+	defer cancel()
+	p, err := a.revertToAuto(ctx, strings.TrimSpace(body.Model))
+	if errors.Is(err, errNoOfficialPrice) {
+		return jsonError(http.StatusNotFound, err.Error())
+	}
+	if errors.Is(err, errPriceChanged) {
+		return jsonError(http.StatusConflict, err.Error())
+	}
+	if err != nil {
+		return jsonError(http.StatusBadGateway, err.Error())
+	}
+	return jsonResponse(http.StatusOK, p)
+}
+
+func (a *App) priceSyncViewFrom(s SyncStatus) SyncStatus {
+	if s.Unmatched == nil {
+		s.Unmatched = []string{}
+	}
+	return s
 }

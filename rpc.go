@@ -19,7 +19,7 @@ const PluginID = "cpa-users"
 
 // PluginVersion is stamped by the release build (-X main.PluginVersion=...) so the
 // registered version always matches the release tag the store installs.
-var PluginVersion = "0.2.0"
+var PluginVersion = "0.3.0"
 
 const (
 	abiVersion uint32 = 1

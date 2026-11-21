@@ -221,6 +221,7 @@ func (s *store) migrate() error {
 		{"request_log", "cost_micros", "INTEGER NOT NULL DEFAULT 0"},
 		{"request_log", "cached_tokens", "INTEGER NOT NULL DEFAULT 0"},
 		{"request_log", "reasoning_tokens", "INTEGER NOT NULL DEFAULT 0"},
+		{"prices", "source", "TEXT NOT NULL DEFAULT 'manual'"},
 	}
 	for _, c := range cols {
 		has, err := s.hasColumn(c.table, c.name)

@@ -32,17 +32,43 @@ type Config struct {
 	// CurrencySymbol is shown next to every amount. Prices are entered in this
 	// currency; the plugin does not convert.
 	CurrencySymbol string `yaml:"currency_symbol"`
+	// Price sync imports official list prices (USD) from LiteLLM and
+	// OpenRouter. Manual prices always win.
+	PriceSync          *bool  `yaml:"price_sync"`
+	PriceSyncHours     int    `yaml:"price_sync_hours"`
+	PriceProxyURL      string `yaml:"price_proxy_url"`
+	PriceLiteLLMURL    string `yaml:"price_litellm_url"`
+	PriceOpenRouterURL string `yaml:"price_openrouter_url"`
+}
+
+// priceSync reports whether automatic prices may be imported. The datasets
+// are in US dollars, so a ledger kept in another currency never imports them.
+func (c Config) priceSync() bool { return (c.PriceSync == nil || *c.PriceSync) && c.usdLedger() }
+
+func (c Config) usdLedger() bool {
+	switch strings.ToUpper(c.CurrencySymbol) {
+	case "$", "US$", "USD":
+		return true
+	}
+	return false
+}
+
+func (c Config) syncInterval() time.Duration {
+	return time.Duration(c.PriceSyncHours) * time.Hour
 }
 
 func defaultConfig() Config {
 	on := true
 	return Config{
-		DBPath:           "plugins/cpa-users.db",
-		Timezone:         "Local",
-		FilterModelList:  &on,
-		KeyPrefix:        "sk-cu-",
-		LogRetentionDays: 30,
-		CurrencySymbol:   "$",
+		DBPath:             "plugins/cpa-users.db",
+		Timezone:           "Local",
+		FilterModelList:    &on,
+		KeyPrefix:          "sk-cu-",
+		LogRetentionDays:   30,
+		CurrencySymbol:     "$",
+		PriceSyncHours:     12,
+		PriceLiteLLMURL:    defaultLiteLLMURL,
+		PriceOpenRouterURL: defaultOpenRouterURL,
 	}
 }
 
@@ -74,6 +100,19 @@ func parseConfig(raw []byte) (Config, error) {
 	if cfg.CurrencySymbol == "" {
 		cfg.CurrencySymbol = "$"
 	}
+	if cfg.PriceSyncHours <= 0 {
+		cfg.PriceSyncHours = 12
+	}
+	if cfg.PriceSyncHours < 1 {
+		cfg.PriceSyncHours = 1
+	}
+	cfg.PriceProxyURL = strings.TrimSpace(cfg.PriceProxyURL)
+	if strings.TrimSpace(cfg.PriceLiteLLMURL) == "" {
+		cfg.PriceLiteLLMURL = defaultLiteLLMURL
+	}
+	if strings.TrimSpace(cfg.PriceOpenRouterURL) == "" {
+		cfg.PriceOpenRouterURL = defaultOpenRouterURL
+	}
 	if len([]rune(cfg.CurrencySymbol)) > 4 {
 		cfg.CurrencySymbol = string([]rune(cfg.CurrencySymbol)[:4])
 	}
@@ -101,6 +140,11 @@ func configFields() []configField {
 		{Name: "key_prefix", Type: "string", Default: "sk-cu-", Description: "签发 key 的前缀"},
 		{Name: "log_retention_days", Type: "integer", Default: 30, Description: "请求明细保留天数（按小时汇总的数据永久保留）"},
 		{Name: "currency_symbol", Type: "string", Default: "$", Description: "金额显示的货币符号，例如 $ 或 ¥；模型价格按这个货币填写"},
+		{Name: "price_sync", Type: "boolean", Default: true, Description: "自动从 LiteLLM / OpenRouter 同步官方价格（美元）；手动填写的价格不会被覆盖"},
+		{Name: "price_sync_hours", Type: "integer", Default: 12, Description: "自动同步价格的间隔（小时）"},
+		{Name: "price_proxy_url", Type: "string", Default: "", Description: "同步价格时使用的代理，例如 http://mihomo:7891；留空则用环境变量 HTTPS_PROXY"},
+		{Name: "price_litellm_url", Type: "string", Default: defaultLiteLLMURL, Description: "LiteLLM 价格表地址（可换成镜像）"},
+		{Name: "price_openrouter_url", Type: "string", Default: defaultOpenRouterURL, Description: "OpenRouter 模型列表地址（可换成镜像）"},
 		{Name: "public_base_url", Type: "string", Default: "", Description: "用户访问 CPA 的地址，例如 https://cpa.example.com；用于自助查询链接和接入说明，在 Oh My CPA 中必须填写"},
 	}
 }

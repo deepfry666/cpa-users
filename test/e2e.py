@@ -156,6 +156,16 @@ s, raw, _ = req("GET", BASE + "/v0/resource/plugins/cpa-users/me/data", {"Author
 me = j(raw)
 check("me/data has cost fields", s == 200 and me["quota"]["day"]["cost"] > 0 and me["currency_symbol"] == "$", me if s != 200 else me["quota"])
 
+# --- automatic price sync ---
+s, ps = mgmt("POST", "prices/sync", {})
+check("price sync runs", s == 200 and ps.get("matched", 0) >= 2, (s, ps))
+s, st = mgmt("GET", "state")
+src = {p["model"]: p.get("source") for p in st["prices"]}
+check("synced prices: official LiteLLM + OpenRouter rows, manual gpt-5* untouched",
+      src.get("deepseek-v4-flash") == "litellm" and src.get("claude-opus-x") == "openrouter" and src.get("gpt-5*") == "manual", src)
+a = next(u for u in st["users"] if u["name"] == "A")
+check("newly priced model backfills zero-cost history (A used deepseek-v4-flash)", a["quota"]["total_cost"] > 0, a["quota"])
+
 # --- disable ---
 mgmt("POST", "key/update", {"id": ka["id"], "name": "A-laptop", "disabled": True})
 s, raw, _ = chat(KA, "gpt-5.6-sol")

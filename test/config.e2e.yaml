@@ -34,3 +34,5 @@ plugins:
       enabled: true
       priority: 10
       timezone: "Asia/Shanghai"
+      price_litellm_url: "http://127.0.0.1:18400/litellm.json"
+      price_openrouter_url: "http://127.0.0.1:18400/openrouter.json"

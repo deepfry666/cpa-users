@@ -211,6 +211,12 @@ tbody tr.has-err td { border-bottom: 0; }
   margin: 2px 4px 2px 0; white-space: nowrap;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
+.chip.src { font-size: 11px; padding: 1px 6px; margin-left: 6px; vertical-align: middle; }
+.chip.src.auto { color: var(--text-secondary); }
+.sync-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 10px 12px; margin-bottom: 12px;
+  border: 1px solid var(--border); border-radius: 10px; font-size: 13px; color: var(--text-secondary); }
+.sync-bar strong { color: var(--text-primary); font-weight: 600; }
+.sync-bar .err { color: var(--danger, #c0392b); }
 .chip.warn { background: var(--warn-surface); color: var(--warn-text); border: 1px solid var(--warn-border); }
 .chip button { border: 0; background: none; padding: 0 0 0 3px; cursor: pointer; color: var(--text-tertiary); font-size: 13px; line-height: 1; }
 .chip button:hover { color: var(--text-primary); }
@@ -675,6 +681,7 @@ async function loadState() {
     models: s.models || [],
     prices: s.prices || [],
     unpriced_models: s.unpriced_models || [],
+    price_sync: s.price_sync || null,
     running_total: typeof s.running_total === "number" ? s.running_total : runningSum,
     config: s.config || {},
     ready: s.ready,
@@ -2114,9 +2121,11 @@ function renderPrices() {
       note: addNote.value.trim(),
     };
     try {
-      await api("price/save", { method: "POST", body });
+      const r = await api("price/save", { method: "POST", body });
       view.prefillPriceModel = "";
-      toast(`已保存价格：${model}`);
+      const filled = (r.backfilled_models || []).length;
+      toast(filled ? `已保存价格：${model}，已补算 ${filled} 个模型的历史金额` : `已保存价格：${model}`);
+      if (filled && state.usage) await loadUsage();
       await loadState();
       render();
     } catch (e) { handleError(e); }
@@ -2133,7 +2142,7 @@ function renderPrices() {
           `${state.unpriced_models.length} 个已产生用量的模型未匹配到价格规则`
         ),
         h("div", { class: "hint", style: { marginTop: "2px" } },
-          "点击下方模型即可一键填入新增栏；设置后可点右上角「按当前价格重算历史」补算历史消费金额。"
+          "官方价格表里查不到这些模型（多为 CPA 内部名称或别名），需要手动填写。点击模型即可填入新增栏。"
         ),
         h("div", { class: "unpriced-list" },
           state.unpriced_models.map((m) =>
@@ -2175,6 +2184,48 @@ function renderPrices() {
     }
   }, "按当前价格重算历史");
 
+  // Automatic price sync status
+  const ps = state.price_sync;
+  const ago = (ts) => {
+    if (!ts) return "从未";
+    const sec = Math.max(0, Math.round(Date.now() / 1000 - ts));
+    if (sec < 90) return "刚刚";
+    if (sec < 3600) return `${Math.round(sec / 60)} 分钟前`;
+    if (sec < 86400) return `${Math.round(sec / 3600)} 小时前`;
+    return `${Math.round(sec / 86400)} 天前`;
+  };
+  const syncBtn = h("button", {
+    class: "btn small",
+    type: "button",
+    onClick: async () => {
+      syncBtn.disabled = true;
+      syncBtn.textContent = "同步中…";
+      try {
+        const r = await api("prices/sync", { method: "POST", body: {} });
+        toast(r.updated ? `已同步，更新 ${r.updated} 个模型价格` : "已同步，价格没有变化");
+        await loadState();
+        if (state.usage) await loadUsage();
+        render();
+      } catch (e) {
+        syncBtn.disabled = false;
+        syncBtn.textContent = "立即同步";
+        handleError(e);
+      }
+    }
+  }, "立即同步");
+  const syncBar = ps ? h("div", { class: "sync-bar" },
+    h("span", null, h("strong", null, ps.enabled ? "自动同步官方价格" : "自动同步已关闭"),
+      `（LiteLLM 优先，OpenRouter 补充；每 ${state.config.price_sync_hours || 12} 小时）`),
+    h("span", null, `上次：${ago(ps.last_at)}`),
+    ps.last_at ? h("span", null, `匹配 ${ps.matched || 0} 个`) : null,
+    (ps.unmatched && ps.unmatched.length)
+      ? h("span", { title: ps.unmatched.join("\n") }, `${ps.unmatched.length} 个查不到官方价：${ps.unmatched.slice(0, 4).join("、")}${ps.unmatched.length > 4 ? " 等" : ""}`)
+      : null,
+    ps.error ? h("span", { class: "err" }, ps.error) : null,
+    h("span", { class: "spacer" }),
+    syncBtn
+  ) : null;
+
   const addBar = h("div", { class: "price-add-bar" },
     h("label", { class: "field span-full" }, "模型 / 通配规则", addModel),
     h("label", { class: "field" }, `输入 (${sym}/1M)`, addIn),
@@ -2194,7 +2245,14 @@ function renderPrices() {
       output: Number(p.output) || 0,
       per_request: Number(p.per_request) || 0,
       note: p.note || "",
+      source: p.source || "manual",
     };
+    const isAuto = orig.source !== "manual";
+    const srcLabel = { litellm: "LiteLLM", openrouter: "OpenRouter" }[orig.source] || orig.source;
+    const srcChip = h("span", {
+      class: isAuto ? "chip src auto" : "chip src",
+      title: isAuto ? "自动同步的官方价格，会随数据源更新；手动修改后改为固定价格" : "手动填写，自动同步不会覆盖"
+    }, isAuto ? srcLabel : "手动");
     const mIn = h("input", { class: "cell-in model-in", list: "known-models-list", value: orig.model });
     const inIn = h("input", { class: "cell-in num-in", type: "number", min: "0", step: "any", value: String(orig.input) });
     const caIn = h("input", { class: "cell-in num-in", type: "number", min: "0", step: "any", value: String(orig.cached) });
@@ -2229,6 +2287,7 @@ function renderPrices() {
         note: noteIn.value.trim(),
       };
       if (newModel !== orig.model) body.old_model = orig.model;
+      if (isAuto && !confirm("改成手动价格后，这个模型不再随官方价格自动更新。继续？")) return;
       try {
         await api("price/save", { method: "POST", body });
         toast(`已更新价格：${newModel}`);
@@ -2257,15 +2316,36 @@ function renderPrices() {
       }
     }, "删除");
 
+    const revertBtn = (!isAuto && state.price_sync && state.price_sync.enabled && !orig.model.includes("*"))
+      ? h("button", {
+          class: "btn small",
+          type: "button",
+          title: "删除手动价格并从官方价格表重新同步",
+          onClick: async () => {
+            if (!confirm(`「${orig.model}」改回自动同步的官方价格？`)) return;
+            revertBtn.disabled = true;
+            try {
+              await api("price/auto", { method: "POST", body: { model: orig.model } });
+              toast("已改回官方价格");
+              await loadState();
+              render();
+            } catch (e) {
+              revertBtn.disabled = false;
+              handleError(e);
+            }
+          }
+        }, "改回自动")
+      : null;
+
     tr.replaceChildren(
-      h("td", null, mIn),
+      h("td", { class: "nowrap" }, mIn, srcChip),
       h("td", { class: "num" }, inIn),
       h("td", { class: "num" }, caIn),
       h("td", { class: "num" }, outIn),
       h("td", { class: "num" }, reqIn),
       h("td", null, noteIn),
       h("td", { class: "nowrap", style: { textAlign: "right" } },
-        h("div", { class: "row", style: { justifyContent: "flex-end", gap: "6px", flexWrap: "nowrap" } }, saveBtn, delBtn)
+        h("div", { class: "row", style: { justifyContent: "flex-end", gap: "6px", flexWrap: "nowrap" } }, saveBtn, revertBtn, delBtn)
       )
     );
     return tr;
@@ -2297,6 +2377,7 @@ function renderPrices() {
       h("span", { class: "spacer" }),
       recomputeBtn
     ),
+    syncBar,
     unpricedBox,
     addBar,
     tableOrEmpty,

@@ -242,10 +242,21 @@ func (s *state) priceTable() *priceTable {
 }
 
 // priceFor finds the price of the first model name that has one.
+// The owner's manual rules are tried for every name before any automatic
+// price, so a synced price for an alias cannot beat a manual rule for the
+// upstream model.
 func (s *state) priceFor(models ...string) (Price, bool) {
 	t := s.priceTable()
 	for _, m := range models {
-		if p, ok := t.lookup(m); ok {
+		if p, ok := t.manualLookup(m); ok {
+			return p, true
+		}
+	}
+	if t == nil || t.auto == nil {
+		return Price{}, false
+	}
+	for _, m := range models {
+		if p, ok := t.auto.tierLookup(m); ok {
 			return p, true
 		}
 	}

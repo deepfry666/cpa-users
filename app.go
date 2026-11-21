@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -33,13 +34,24 @@ type App struct {
 	// cannot drop usage recorded while it read the database.
 	acctMu sync.Mutex
 
+	syncer *priceSyncer
+	// bgCancel stops background work (price sync included) for this run;
+	// bgWG lets shutdown wait for it before storage closes.
+	bgCtx    context.Context
+	bgCancel context.CancelFunc
+	bgWG     sync.WaitGroup
+	// opsMu tracks console-started syncs: they hold it shared, shutdown
+	// takes it exclusively so storage is not closed under them.
+	opsMu   sync.RWMutex
+	closing bool
+
 	stop    chan struct{}
 	started bool
 	dirty   chan struct{}
 }
 
 func newApp() *App {
-	return &App{state: newState(), cfg: defaultConfig(), stop: make(chan struct{}), dirty: make(chan struct{}, 1)}
+	return &App{state: newState(), cfg: defaultConfig(), stop: make(chan struct{}), dirty: make(chan struct{}, 1), syncer: newPriceSyncer()}
 }
 
 func (a *App) config() Config {
@@ -105,6 +117,9 @@ func (a *App) configure(payload []byte) ([]byte, error) {
 		return nil, err
 	}
 
+	// writeMu orders the config swap with price syncs, which check the
+	// currency and storage under it before they publish.
+	a.writeMu.Lock()
 	a.mu.Lock()
 	reopen := a.store == nil || a.cfg.DBPath != cfg.DBPath
 	a.cfg = cfg
@@ -123,12 +138,27 @@ func (a *App) configure(payload []byte) ([]byte, error) {
 	}
 	st := a.store
 	a.mu.Unlock()
+	var errLoad error
+	if st != nil {
+		errLoad = a.reload()
+	}
+	a.writeMu.Unlock()
 
 	if st != nil {
-		if err := a.reload(); err != nil {
-			log.Printf("[%s] load data: %v", PluginID, err)
+		if errLoad != nil {
+			log.Printf("[%s] load data: %v", PluginID, errLoad)
 		}
 		a.seedCounters()
+		if raw := st.getMeta("price_sync"); raw != "" {
+			var s SyncStatus
+			if json.Unmarshal([]byte(raw), &s) == nil {
+				a.syncer.mu.Lock()
+				s.Running = false
+				a.syncer.status = s
+				a.syncer.last = time.Unix(s.LastAt, 0)
+				a.syncer.mu.Unlock()
+			}
+		}
 		if raw := st.getMeta("models"); raw != "" {
 			var ids []string
 			if json.Unmarshal([]byte(raw), &ids) == nil {
@@ -216,6 +246,7 @@ func (a *App) markModelsDirty() {
 	case a.dirty <- struct{}{}:
 	default:
 	}
+	a.syncer.poke()
 }
 
 // startBackground flushes key last-used times and discovered models, and
@@ -228,8 +259,15 @@ func (a *App) startBackground() {
 	}
 	a.started = true
 	stop := a.stop
+	ctx, cancel := context.WithCancel(context.Background())
+	a.bgCtx, a.bgCancel = ctx, cancel
 	a.mu.Unlock()
 
+	a.bgWG.Add(1)
+	go func() {
+		defer a.bgWG.Done()
+		a.priceSyncLoop(ctx)
+	}()
 	go func() {
 		flush := time.NewTicker(15 * time.Second)
 		prune := time.NewTicker(6 * time.Hour)
@@ -286,13 +324,32 @@ func (a *App) prune() {
 // shutdown stops background work and closes storage. A later
 // plugin.register reopens everything.
 func (a *App) shutdown() {
+	// Cancel first so console syncs abort their downloads, then wait for them.
+	a.mu.Lock()
+	if a.bgCancel != nil {
+		a.bgCancel()
+	}
+	a.mu.Unlock()
+	a.opsMu.Lock()
+	a.closing = true
+	a.opsMu.Unlock()
+	defer func() {
+		a.opsMu.Lock()
+		a.closing = false
+		a.opsMu.Unlock()
+	}()
 	a.mu.Lock()
 	if a.started {
 		close(a.stop)
 		a.stop = make(chan struct{})
 		a.started = false
 	}
+	if a.bgCancel != nil {
+		a.bgCancel()
+		a.bgCancel = nil
+	}
 	a.mu.Unlock()
+	a.bgWG.Wait() // an in-flight sync finishes or aborts before storage closes
 	a.flush()
 	a.saveModels()
 	a.mu.Lock()
@@ -310,3 +367,27 @@ func truncate(s string, n int) string {
 	}
 	return string([]rune(s)[:n]) + "…"
 }
+
+// backgroundContext is cancelled when the plugin shuts down, so on-demand
+// syncs started from the console stop with it.
+func (a *App) backgroundContext() context.Context {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+	if a.bgCtx != nil {
+		return a.bgCtx
+	}
+	return context.Background()
+}
+
+// beginOp registers a console-started background operation; it fails once
+// shutdown has begun. Shutdown waits for registered operations to end.
+func (a *App) beginOp() bool {
+	a.opsMu.RLock()
+	if a.closing {
+		a.opsMu.RUnlock()
+		return false
+	}
+	return true
+}
+
+func (a *App) endOp() { a.opsMu.RUnlock() }
